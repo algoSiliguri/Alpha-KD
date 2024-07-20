@@ -39,7 +39,7 @@ class TreePcaQuantile:
         self.model, self.sc, self.pca = None, None, None
         self.saved_model_path, self.saved_sc_path = None, None
 
-        # Get test parameters
+        # Get test.py parameters
         self.output_dictionary = parameters.copy()
         self.output_dictionary["train_mode"] = False
 
@@ -92,7 +92,7 @@ class TreePcaQuantile:
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
         list_y = ["Signal"]
 
-        # Split our dataset in a train and a test set
+        # Split our dataset in a train and a test.py set
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(
             self.data_train, split, self.list_X, list_y

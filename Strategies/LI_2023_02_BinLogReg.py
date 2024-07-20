@@ -33,7 +33,7 @@ class BinLogReg:
 
         self.model, self.saved_model_path = None, None
 
-        # Get test parameters
+        # Get test.py parameters
         self.output_dictionary = parameters.copy()
         self.output_dictionary["train_mode"] = False
 
@@ -77,7 +77,7 @@ class BinLogReg:
         self.data_train = binary_signal(self.data_train, self.look_ahead_period)
         list_y = ["Signal"]
 
-        # Split our dataset in a train and a test set
+        # Split our dataset in a train and a test.py set
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(
             self.data_train, split, self.list_X, list_y
@@ -90,7 +90,7 @@ class BinLogReg:
         # Save models as attributes
         self.model = ml_model
 
-        # Save the model for the eventual test sets
+        # Save the model for the eventual test.py sets
         self.output_dictionary["model"] = ml_model
 
     def get_predictions(self):
