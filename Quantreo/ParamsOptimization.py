@@ -1,5 +1,5 @@
 """
-The ParamsOptimization class is the first bloc of our future WalkForwardOptimization (the best way to train & test you algo)
+The ParamsOptimization class is the first bloc of our future WalkForwardOptimization (the best way to train & test.py you algo)
 """
 
 import pandas as pd
@@ -56,7 +56,7 @@ class ParamsOptimization:
     def get_best_params_train_set(self):
         # Store of the possible parameters combinations with the associated criterion
         # Here, we put the best criterion on the train set to find the best parameters BUT we will replace it
-        # by the best criterion on the test set to be as close as possible to the reality
+        # by the best criterion on the test.py set to be as close as possible to the reality
         storage_values_params = []
 
         for self.params_item in self.dictionaries:
@@ -79,7 +79,7 @@ class ParamsOptimization:
             by="criterion", ascending=False
         ).iloc[0:1, :]
 
-        # Create a dictionary with the best params on the train set in order to test them on the test set later
+        # Create a dictionary with the best params on the train set in order to test.py them on the test.py set later
         self.best_params_sample = dict(
             df_find_params.sort_values(by="criterion", ascending=False).iloc[0, :-1]
         )

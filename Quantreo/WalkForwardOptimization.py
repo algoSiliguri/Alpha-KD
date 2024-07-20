@@ -7,7 +7,7 @@ class WalkForwardOptimization:
     A class for performing Walk-Forward Optimization on a trading strategy.
 
     This class is responsible for finding the optimal set of parameters for a
-    trading strategy by dividing a dataset into multiple training and test sets
+    trading strategy by dividing a dataset into multiple training and test.py sets
     and running the strategy on each one.
 
     This method of optimization helps prevent curve fitting by ensuring that the
@@ -35,7 +35,7 @@ class WalkForwardOptimization:
 
     anchored: bool, default True
         Whether the training set should be anchored, meaning it always begins at the start of the dataset.
-        If False, the training set will move forward in time with the test set.
+        If False, the training set will move forward in time with the test.py set.
 
     title: str, default None
         The title of the backtest's plot.
@@ -99,7 +99,7 @@ class WalkForwardOptimization:
             dictionary.update(self.fixed_parameters)
 
     def get_sub_samples(self):
-        # Compute the length of the test set
+        # Compute the length of the test.py set
         length_test = int(
             self.length_train_set / self.pct_train_set - self.length_train_set
         )
@@ -117,13 +117,13 @@ class WalkForwardOptimization:
             if (len(self.data) - end) < 2 * length_test:
                 # Fill the samples list depending on if there are anchored or not
                 if self.anchored:
-                    # We store the train and test set in 2 list to make future computations easier
+                    # We store the train and test.py set in 2 list to make future computations easier
                     self.train_samples.append(self.data.iloc[: end - length_test, :])
                     self.test_samples.append(
                         self.data.iloc[end - length_test : len(self.data), :]
                     )
                 else:
-                    # We store the train and test set in 2 list to make future computations easier
+                    # We store the train and test.py set in 2 list to make future computations easier
                     self.train_samples.append(
                         self.data.iloc[start : end - length_test, :]
                     )
@@ -134,11 +134,11 @@ class WalkForwardOptimization:
 
             # Fill the samples list depending on if there are anchored or not
             if self.anchored:
-                # We store the train and test set in 2 list to make future computations easier
+                # We store the train and test.py set in 2 list to make future computations easier
                 self.train_samples.append(self.data.iloc[: end - length_test, :])
                 self.test_samples.append(self.data.iloc[end - length_test : end, :])
             else:
-                # We store the train and test set in 2 list to make future computations easier
+                # We store the train and test.py set in 2 list to make future computations easier
                 self.train_samples.append(self.data.iloc[start : end - length_test, :])
                 self.test_samples.append(self.data.iloc[end - length_test : end, :])
 
@@ -162,7 +162,7 @@ class WalkForwardOptimization:
     def get_best_params_train_set(self):
         # Store of the possible parameters combinations with the associated criterion
         # Here, we put the best criterion on the train set to find the best parameters BUT we will replace it
-        # by the best criterion on the test set to be as close as possible to the reality
+        # by the best criterion on the test.py set to be as close as possible to the reality
         storage_values_params = []
 
         for self.params_item in np.random.choice(
@@ -198,7 +198,7 @@ class WalkForwardOptimization:
             (self.df_results, self.best_params_sample_df), axis=0
         )
 
-        # Create a dictionary with the best params on the train set in order to test them on the test set later
+        # Create a dictionary with the best params on the train set in order to test.py them on the test.py set later
         self.best_params_sample = dict(
             df_find_params.sort_values(by="criterion", ascending=False).iloc[0, :-1]
         )
@@ -240,10 +240,10 @@ class WalkForwardOptimization:
         # Extract smoothed best params
         smooth_best_params = self.get_smoother_result()
 
-        # Compute the criterion on the test set, using the smoothed best params
+        # Compute the criterion on the test.py set, using the smoothed best params
         self.get_criterion(self.test_sample, smooth_best_params)
 
-        # We replace the criterion train value by the criterion test value to do not create
+        # We replace the criterion train value by the criterion test.py value to do not create
         self.df_results.at[self.df_results.index[-1], "criterion"] = self.criterion
         self.best_params_smoothed.append(smooth_best_params)
 

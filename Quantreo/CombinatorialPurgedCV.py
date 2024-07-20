@@ -105,7 +105,7 @@ class CombinatorialPurgedCV:
         ]
         self.lists = []
 
-        # Create a list with the test index and the train index
+        # Create a list with the test.py index and the train index
         for i in range(len(combinations_test)):
             self.lists.append([list(combinations_test[i]), combinations_train[i]])
 
@@ -113,7 +113,7 @@ class CombinatorialPurgedCV:
         # Create an equal division of the data (N samples)
         split_data = np.array_split(self.data, self.N)
 
-        # List df train & test couple
+        # List df train & test.py couple
         self.df_lists = []
 
         # STEP 1: Reorganize and add the purge into the sets
@@ -131,7 +131,7 @@ class CombinatorialPurgedCV:
             for j in train_idx:
                 train_df_ind = split_data[j]
 
-                # Remove the beginning or the end if the train is across a test set
+                # Remove the beginning or the end if the train is across a test.py set
                 if (j - 1 in test_idx) and (j + 1 in test_idx):
                     split_embargo = 2 * int(len(train_df_ind) * self.purge_pct)
                     split_purge = int(len(train_df_ind) * self.purge_pct)
@@ -153,12 +153,12 @@ class CombinatorialPurgedCV:
         train_output_list = []
         test_output_list = []
 
-        # We analyze for each couple (train, test) if we can concat consecutive sets
+        # We analyze for each couple (train, test.py) if we can concat consecutive sets
         for j in range(len(self.df_lists)):
             new_list_train = [self.df_lists[j][0][0]]
             new_list_test = [self.df_lists[j][1][0]]
 
-            # We check separately if we need to concat some sets for the train sets and the test sets because it will
+            # We check separately if we need to concat some sets for the train sets and the test.py sets because it will
             # not increase so much the computation (1s) but it will decrease a lot the complexity of the code
 
             # Extract each list of train sets to check if a concatenation is needed
@@ -222,10 +222,10 @@ class CombinatorialPurgedCV:
                     # set
                     new_list_test.append(self.df_lists[j][1][i])
 
-            # Add the list of test sets into a list (because the list of test sets is only one path)
+            # Add the list of test.py sets into a list (because the list of test.py sets is only one path)
             test_output_list.append(new_list_test)
 
-        # We replace the list of train sets and test sets for each couple by the same set but with a concat when
+        # We replace the list of train sets and test.py sets for each couple by the same set but with a concat when
         # it is possible
         for j in range(len(self.df_lists)):
             self.df_lists[j][0] = train_output_list[j]
@@ -306,7 +306,7 @@ class CombinatorialPurgedCV:
             self.get_returns(train=True)
             current_params.append(self.criterion)
 
-            # Compute the criterion and add it to the list of params (criterion test)
+            # Compute the criterion and add it to the list of params (criterion test.py)
             self.get_returns(train=False)
             current_params.append(self.criterion)
 
@@ -330,7 +330,7 @@ class CombinatorialPurgedCV:
             (self.df_results, self.best_params_sample_df), axis=0
         )
 
-        # Create a dictionary with the best params on the train set in order to test them on the test set later
+        # Create a dictionary with the best params on the train set in order to test.py them on the test.py set later
         self.best_params_sample = dict(
             df_find_params.sort_values(by="criterion_train", ascending=False).iloc[
                 0, :-2
@@ -345,7 +345,7 @@ class CombinatorialPurgedCV:
 
         # Run the optimization
         for couple_list in tqdm(self.df_lists):
-            # Extract the train and test sets in this couple
+            # Extract the train and test.py sets in this couple
             self.train_df_list, self.test_df_list = couple_list[0], couple_list[1]
 
             self.get_best_params_set()
@@ -357,10 +357,10 @@ class CombinatorialPurgedCV:
             # Extract a couple
             list_couple = self.df_lists[i]
 
-            # Extract the train and test sets in this couple
+            # Extract the train and test.py sets in this couple
             train_df_list, test_df_list = list_couple[0], list_couple[1]
 
-            # Concatenate each sets into a True train & test periods
+            # Concatenate each sets into a True train & test.py periods
             df_test = pd.concat(test_df_list, axis=0)
             df_train = pd.concat(train_df_list, axis=0)
 
@@ -387,7 +387,7 @@ class CombinatorialPurgedCV:
 
     def get_pbo(self):
         for ind_df in self.dfs_list_pbo:
-            # Order the dataframe using the criterion test column
+            # Order the dataframe using the criterion test.py column
             dfp_ordered = ind_df.sort_values(by="criterion_test", ascending=False)
 
             # Re-index the dataframe
@@ -398,7 +398,7 @@ class CombinatorialPurgedCV:
             # Order the dataframe a second time through the criterion train column
             dfp_rank = dfp_ordered.sort_values(by="criterion_train", ascending=False)
 
-            # Extract the rank in the test of the best combination in the train set
+            # Extract the rank in the test.py of the best combination in the train set
             rank = dfp_rank.index[0]
 
             # Create the relative rank of the OOS performance

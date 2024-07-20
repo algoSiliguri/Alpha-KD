@@ -98,7 +98,7 @@ def quantile_signal(df, n, quantile_level=0.67, pct_split=0.8):
 
     n = int(n)
 
-    # Create the split between train and test set to do not create a Look-Ahead bais
+    # Create the split between train and test.py set to do not create a Look-Ahead bais
     split = int(len(df) * pct_split)
 
     # Copy the dataframe to do not create any intereference
