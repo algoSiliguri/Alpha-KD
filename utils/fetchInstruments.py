@@ -13,10 +13,8 @@ def process_instruments(instruments_data):
     for instrument in instruments_data:
         if instrument["segment"] == "NSE_EQ":
             instrumentkey = instrument["instrument_key"].split("|")[1].strip()
-            if "short_name" in instrument:
-                data.append({instrument["short_name"].strip(): instrumentkey})
-            else:
-                data.append({instrument["trading_symbol"].strip(): instrumentkey})
+            data.append({instrument["trading_symbol"].strip(): instrumentkey})
+
     return data
 
 
