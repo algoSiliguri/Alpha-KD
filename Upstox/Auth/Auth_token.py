@@ -8,14 +8,6 @@ def read_properties(file_path):
     config.read(file_path)
     return config['DEFAULT']
 
-# Read properties from the application.properties file
-properties_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'application.properties')
-properties = read_properties(properties_path)
-
-API_KEY = properties.get('api_key')
-API_SECRET = properties.get('api_secret')
-REDIRECT_URI = properties.get('redirect_uri')
-
 # Step 1: Get the login URL
 def get_login_url():
     login_url = f'https://api.upstox.com/index/dialog/authorize?apiKey={API_KEY}&redirect_uri={REDIRECT_URI}&response_type=code'
@@ -31,6 +23,14 @@ def get_auth_code():
 
 # Step 3: Use the auth code to get the access token
 def get_access_token(auth_code):
+    # Read properties from the application.properties file
+    properties_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'application.properties')
+    properties = read_properties(properties_path)
+
+    API_KEY = properties.get('api_key')
+    API_SECRET = properties.get('api_secret')
+    REDIRECT_URI = properties.get('redirect_uri')
+    
     url = 'https://api.upstox.com/index/oauth/token'
     payload = {
         'code': auth_code,
