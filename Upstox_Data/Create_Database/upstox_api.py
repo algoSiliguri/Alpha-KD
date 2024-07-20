@@ -27,7 +27,7 @@ class UpstoxAPI:
             requests.exceptions.RequestException: If the API request fails.
             ValueError: If the API response indicates a failure.
         """
-        url = f"{UpstoxAPI.BASE_URL}/historical-candle/NSE_EQ|{symbol}/{interval}/{end_date}/{start_date}"
+        url = f"{UpstoxAPI.BASE_URL}/historical-candle/{symbol}/{interval}/{end_date}/{start_date}"
         headers = {"Accept": "application/json"}
         response = requests.get(url, headers=headers)
 
