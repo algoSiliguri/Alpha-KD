@@ -2,13 +2,14 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 
+
 def find_timestamp_extremum(df, df_lower_timeframe):
     """
     :param: df_lowest_timeframe
     :return: self._data with three new columns: Low_time (TimeStamp), High_time (TimeStamp), High_first (Boolean)
     """
     df = df.copy()
-    df = df.loc[df_lower_timeframe.index[0]:]
+    df = df.loc[df_lower_timeframe.index[0] :]
 
     # Set new columns
     df["low_time"] = np.nan
@@ -18,8 +19,8 @@ def find_timestamp_extremum(df, df_lower_timeframe):
     for i in tqdm(range(len(df) - 1)):
 
         # Extract values from the lowest timeframe dataframe
-        start = df.iloc[i:i + 1].index[0]
-        end = df.iloc[i + 1:i + 2].index[0]
+        start = df.iloc[i : i + 1].index[0]
+        end = df.iloc[i + 1 : i + 2].index[0]
         row_lowest_timeframe = df_lower_timeframe.loc[start:end].iloc[:-1]
 
         # Extract Timestamp of the max and min over the period (highest timeframe)
@@ -47,12 +48,14 @@ def find_timestamp_extremum(df, df_lower_timeframe):
     return df
 
 
-df_low_tf = pd.read_csv("FixTimeBars/AUDUSD_30M_Admiral.csv", index_col="time", parse_dates=True)
-df_high_tf = pd.read_csv("FixTimeBars/AUDUSD_4H_Admiral.csv", index_col="time", parse_dates=True)
+df_low_tf = pd.read_csv(
+    "FixTimeBars/AUDUSD_30M_Admiral.csv", index_col="time", parse_dates=True
+)
+df_high_tf = pd.read_csv(
+    "FixTimeBars/AUDUSD_4H_Admiral.csv", index_col="time", parse_dates=True
+)
 
 df = find_timestamp_extremum(df_high_tf, df_low_tf)
 
 print(df[["high_time", "low_time"]])
 df.to_csv("FixTimeBars/AUDUSD_4H_Admiral_READY.csv")
-
-

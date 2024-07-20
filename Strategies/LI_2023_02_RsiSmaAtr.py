@@ -15,7 +15,11 @@ class RsiSmaAtr:
     def __init__(self, data, parameters):
         # Set parameters
         self.data = data
-        self.fast_sma, self.slow_sma, self.rsi = parameters["fast_sma"], parameters["slow_sma"], parameters["rsi"]
+        self.fast_sma, self.slow_sma, self.rsi = (
+            parameters["fast_sma"],
+            parameters["slow_sma"],
+            parameters["rsi"],
+        )
         self.tp, self.sl = None, None
         self.cost = parameters["cost"]
         self.leverage = parameters["leverage"]
@@ -42,14 +46,22 @@ class RsiSmaAtr:
         self.data = atr(self.data, 15)
         self.data["TP_level"] = self.data["open"] + 3 * self.data["ATR"].shift(1)
         self.data["SL_level"] = self.data["open"] - 3 * self.data["ATR"].shift(1)
-        self.data["TP_pct"] = (self.data["TP_level"] - self.data["open"]) / self.data["open"]
-        self.data["SL_pct"] = (self.data["SL_level"] - self.data["open"]) / self.data["open"]
+        self.data["TP_pct"] = (self.data["TP_level"] - self.data["open"]) / self.data[
+            "open"
+        ]
+        self.data["SL_pct"] = (self.data["SL_level"] - self.data["open"]) / self.data[
+            "open"
+        ]
 
         # def signal
         self.data["signal"] = 0
         self.data["RSI_retarded"] = self.data[f"RSI"].shift(1)
-        condition_1_buy = self.data[f"SMA_{self.fast_sma}"] < self.data[f"SMA_{self.slow_sma}"]
-        condition_1_sell = self.data[f"SMA_{self.fast_sma}"] > self.data[f"SMA_{self.slow_sma}"]
+        condition_1_buy = (
+            self.data[f"SMA_{self.fast_sma}"] < self.data[f"SMA_{self.slow_sma}"]
+        )
+        condition_1_sell = (
+            self.data[f"SMA_{self.fast_sma}"] > self.data[f"SMA_{self.slow_sma}"]
+        )
 
         condition_2_buy = self.data[f"RSI"] > self.data["RSI_retarded"]
         condition_2_sell = self.data[f"RSI"] < self.data["RSI_retarded"]
@@ -78,16 +90,22 @@ class RsiSmaAtr:
         if entry_signal == 1 and not self.buy and not self.sell:
             self.buy = True
             self.open_buy_price = self.data.loc[time]["open"]
-            self.tp, self.sl = self.data.loc[time]["TP_pct"], self.data.loc[time]["SL_pct"]
-            print(time,self.tp*100, self.sl*100)
+            self.tp, self.sl = (
+                self.data.loc[time]["TP_pct"],
+                self.data.loc[time]["SL_pct"],
+            )
+            print(time, self.tp * 100, self.sl * 100)
             self.entry_time = time
 
         # Enter in sell position only if we want to, and we aren't already
         elif entry_signal == -1 and not self.sell and not self.buy:
             self.sell = True
             self.open_sell_price = self.data.loc[time]["open"]
-            self.tp, self.sl = self.data.loc[time]["TP_pct"], self.data.loc[time]["SL_pct"]
-            print(time, self.tp*100, self.sl*100)
+            self.tp, self.sl = (
+                self.data.loc[time]["TP_pct"],
+                self.data.loc[time]["SL_pct"],
+            )
+            print(time, self.tp * 100, self.sl * 100)
             self.entry_time = time
 
         else:
@@ -106,8 +124,12 @@ class RsiSmaAtr:
         """
         # Verify if we need to close a position and update the variations IF we are in a buy position
         if self.buy:
-            self.var_buy_high = (self.data.loc[time]["high"] - self.open_buy_price) / self.open_buy_price
-            self.var_buy_low = (self.data.loc[time]["low"] - self.open_buy_price) / self.open_buy_price
+            self.var_buy_high = (
+                self.data.loc[time]["high"] - self.open_buy_price
+            ) / self.open_buy_price
+            self.var_buy_low = (
+                self.data.loc[time]["low"] - self.open_buy_price
+            ) / self.open_buy_price
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_buy_high) and (self.var_buy_low < self.sl):
@@ -152,8 +174,14 @@ class RsiSmaAtr:
 
         # Verify if we need to close a position and update the variations IF we are in a sell position
         if self.sell:
-            self.var_sell_high = -(self.data.loc[time]["high"] - self.open_sell_price) / self.open_sell_price
-            self.var_sell_low = -(self.data.loc[time]["low"] - self.open_sell_price) / self.open_sell_price
+            self.var_sell_high = (
+                -(self.data.loc[time]["high"] - self.open_sell_price)
+                / self.open_sell_price
+            )
+            self.var_sell_low = (
+                -(self.data.loc[time]["low"] - self.open_sell_price)
+                / self.open_sell_price
+            )
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_sell_low) and (self.var_sell_high < self.sl):

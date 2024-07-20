@@ -41,7 +41,14 @@ class MonteCarlo:
 
     """
 
-    def __init__(self, data, TradingStrategy, parameters, raw_columns=[], discount_calmar_ratio=252):
+    def __init__(
+        self,
+        data,
+        TradingStrategy,
+        parameters,
+        raw_columns=[],
+        discount_calmar_ratio=252,
+    ):
         # Set Initial parameters
         self.data = data
         self.TradingStrategy = TradingStrategy
@@ -68,14 +75,24 @@ class MonteCarlo:
 
         # Create columns with the length of the bar and how much second you need to touch the low and high time
         df["time_variation"] = time_index
-        df["var_low_time"] = (pd.to_datetime(df["low_time"]) - df.index).map(lambda x: x.total_seconds())
-        df["var_high_time"] = (pd.to_datetime(df["high_time"]) - df.index).map(lambda x: x.total_seconds())
+        df["var_low_time"] = (pd.to_datetime(df["low_time"]) - df.index).map(
+            lambda x: x.total_seconds()
+        )
+        df["var_high_time"] = (pd.to_datetime(df["high_time"]) - df.index).map(
+            lambda x: x.total_seconds()
+        )
 
         # Create a list that we will use to generate new data from our sample
         data = []
         for i in range(len(df)):
-            row_values = [df["pct_open_low"].iloc[i], df["pct_open_high"].iloc[i], df["pct_open_close"].iloc[i],
-                          df["time_variation"].iloc[i], df["var_low_time"].iloc[i], df["var_high_time"].iloc[i]]
+            row_values = [
+                df["pct_open_low"].iloc[i],
+                df["pct_open_high"].iloc[i],
+                df["pct_open_close"].iloc[i],
+                df["time_variation"].iloc[i],
+                df["var_low_time"].iloc[i],
+                df["var_high_time"].iloc[i],
+            ]
 
             for col in self.raw_columns:
                 row_values.append(df[col].iloc[i])
@@ -91,8 +108,16 @@ class MonteCarlo:
 
             # Take our sample and extract one
             row_values = random.choice(data)
-            pct_open_low, pct_open_high, pct_open_close = row_values[0], row_values[1], row_values[2]
-            time_variation, var_low_time, var_high_time = row_values[3], row_values[4], row_values[5]
+            pct_open_low, pct_open_high, pct_open_close = (
+                row_values[0],
+                row_values[1],
+                row_values[2],
+            )
+            time_variation, var_low_time, var_high_time = (
+                row_values[3],
+                row_values[4],
+                row_values[5],
+            )
 
             # Extract raw data
             raw_data = [row_values[6 + i] for i in range(len(self.raw_columns))]
@@ -115,7 +140,15 @@ class MonteCarlo:
                 high_price = close_price
 
             # Add our new variables into the list
-            row_data_new = [open_price, low_price, high_price, close_price, current_date, low_time, high_time]
+            row_data_new = [
+                open_price,
+                low_price,
+                high_price,
+                close_price,
+                current_date,
+                low_time,
+                high_time,
+            ]
 
             # Add raw data
             row_data_new.extend(raw_data)
@@ -133,17 +166,15 @@ class MonteCarlo:
 
         return df_simulated
 
-
     def generate_paths(self, number_simulations=100, number_observation=1000):
         # We use the generate_path function to generate N different paths
         for _ in range(number_simulations):
 
             # Generate a path
-            df_sim = self.generate_path(number_observation = number_observation)
+            df_sim = self.generate_path(number_observation=number_observation)
 
             # Add it into our paths list
             self.paths.append(df_sim)
-
 
     def backtest_paths(self):
         # If we do not have any paths into the paths list we run the generate_paths function to create some
@@ -154,7 +185,11 @@ class MonteCarlo:
         for df_path in tqdm(self.paths):
 
             # Initialiaze the backtest
-            BT = Backtest(data=df_path, TradingStrategy=self.TradingStrategy, parameters=self.parameters)
+            BT = Backtest(
+                data=df_path,
+                TradingStrategy=self.TradingStrategy,
+                parameters=self.parameters,
+            )
 
             # Compute the returns of the strategy (on this specific datasets and with these parameters)
             BT.run()
@@ -164,32 +199,38 @@ class MonteCarlo:
             self.returns.append(ret)
             self.drawdowns.append(dd)
 
-
     def display_results(self):
         # If we do not have any return we run the backtest
         if len(self.returns) == 0:
             self.backtest_paths()
 
         # We compute the Calmar Ratio for each path
-        ret_dd = [return_ / np.abs(dd) / (len(self.paths[0]) / self.discount_calmar_ratio) for return_, dd in zip(self.returns, self.drawdowns)]
+        ret_dd = [
+            return_ / np.abs(dd) / (len(self.paths[0]) / self.discount_calmar_ratio)
+            for return_, dd in zip(self.returns, self.drawdowns)
+        ]
 
         # We set up the figure (3 histograms)
         fig, axs = plt.subplots(3, 1, figsize=(15, 10))
 
         # Returns histogram
-        axs[0].hist(self.returns, color="#289E41", bins=40, alpha=0.7, edgecolor="black")
-        axs[0].set_title('Return Distribution %')
-        axs[0].grid(axis='y', linestyle='-', alpha=0.5, color='lightgrey')
+        axs[0].hist(
+            self.returns, color="#289E41", bins=40, alpha=0.7, edgecolor="black"
+        )
+        axs[0].set_title("Return Distribution %")
+        axs[0].grid(axis="y", linestyle="-", alpha=0.5, color="lightgrey")
 
         # Drawdown histogram
-        axs[1].hist(self.drawdowns, color="#9E2828", bins=40, alpha=0.7, edgecolor="black")
-        axs[1].set_title('Drawdown Distribution %')
-        axs[1].grid(axis='y', linestyle='-', alpha=0.5, color='lightgrey')
+        axs[1].hist(
+            self.drawdowns, color="#9E2828", bins=40, alpha=0.7, edgecolor="black"
+        )
+        axs[1].set_title("Drawdown Distribution %")
+        axs[1].grid(axis="y", linestyle="-", alpha=0.5, color="lightgrey")
 
         # Calmar Ratio histogram
         axs[2].hist(ret_dd, color="#28709E", bins=40, alpha=0.7, edgecolor="black")
-        axs[2].set_title('Calmar Ratio Distribution')
-        axs[2].grid(axis='y', linestyle='-', alpha=0.5, color='lightgrey')
+        axs[2].set_title("Calmar Ratio Distribution")
+        axs[2].grid(axis="y", linestyle="-", alpha=0.5, color="lightgrey")
         plt.subplots_adjust(hspace=0.5)
 
         # Plot the graph

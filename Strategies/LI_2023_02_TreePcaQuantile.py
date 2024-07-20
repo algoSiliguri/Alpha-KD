@@ -73,7 +73,7 @@ class TreePcaQuantile:
         data_sample = sto_rsi(data_sample, "close", 14)
         data_sample = ichimoku(data_sample, 27, 78)
         data_sample = candle_information(data_sample)
-        data_sample = atr(data_sample,self.atr_period)
+        data_sample = atr(data_sample, self.atr_period)
         data_sample = data_sample.fillna(value=0)
 
         return data_sample
@@ -86,13 +86,17 @@ class TreePcaQuantile:
         self.data_train = self.get_features(self.data_train)
 
         # Create lists with the columns name of the features used and the target
-        self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
+        self.data_train = quantile_signal(
+            self.data_train, self.look_ahead_period, pct_split=full_split
+        )
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
         split = int(len(self.data_train) * full_split)
-        X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
+        X_train, X_test, y_train, y_test = data_split(
+            self.data_train, split, self.list_X, list_y
+        )
 
         # Initialize the standardization model
         sc = StandardScaler()
@@ -173,8 +177,12 @@ class TreePcaQuantile:
         """
         # Verify if we need to close a position and update the variations IF we are in a buy position
         if self.buy:
-            self.var_buy_high = (self.data.loc[time]["high"] - self.open_buy_price) / self.open_buy_price
-            self.var_buy_low = (self.data.loc[time]["low"] - self.open_buy_price) / self.open_buy_price
+            self.var_buy_high = (
+                self.data.loc[time]["high"] - self.open_buy_price
+            ) / self.open_buy_price
+            self.var_buy_low = (
+                self.data.loc[time]["low"] - self.open_buy_price
+            ) / self.open_buy_price
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_buy_high) and (self.var_buy_low < self.sl):
@@ -219,8 +227,14 @@ class TreePcaQuantile:
 
         # Verify if we need to close a position and update the variations IF we are in a sell position
         if self.sell:
-            self.var_sell_high = -(self.data.loc[time]["high"] - self.open_sell_price) / self.open_sell_price
-            self.var_sell_low = -(self.data.loc[time]["low"] - self.open_sell_price) / self.open_sell_price
+            self.var_sell_high = (
+                -(self.data.loc[time]["high"] - self.open_sell_price)
+                / self.open_sell_price
+            )
+            self.var_sell_low = (
+                -(self.data.loc[time]["low"] - self.open_sell_price)
+                / self.open_sell_price
+            )
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_sell_low) and (self.var_sell_high < self.sl):

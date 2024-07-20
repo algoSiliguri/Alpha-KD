@@ -11,7 +11,10 @@ class Ichimoku_1:
     def __init__(self, data, parameters):
         # Set parameters
         self.data = data
-        self.ichi_window_1, self.ichi_window_2 = parameters["ichi_window_1"], parameters["ichi_window_2"]
+        self.ichi_window_1, self.ichi_window_2 = (
+            parameters["ichi_window_1"],
+            parameters["ichi_window_2"],
+        )
         self.tp, self.sl = parameters["tp"], parameters["sl"]
         self.cost = parameters["cost"]
         self.leverage = parameters["leverage"]
@@ -37,8 +40,12 @@ class Ichimoku_1:
         condition_1_buy = self.data["SPAN_A"] > self.data["SPAN_B"]
         condition_1_sell = self.data["SPAN_A"] < self.data["SPAN_B"]
 
-        condition_2_buy = (self.data["CONVERSION"].shift(1) < self.data["BASE"].shift(1)) & (self.data["BASE"] < self.data["CONVERSION"])
-        condition_2_sell = (self.data["CONVERSION"].shift(1) > self.data["BASE"].shift(1)) & (self.data["BASE"] < self.data["CONVERSION"])
+        condition_2_buy = (
+            self.data["CONVERSION"].shift(1) < self.data["BASE"].shift(1)
+        ) & (self.data["BASE"] < self.data["CONVERSION"])
+        condition_2_sell = (
+            self.data["CONVERSION"].shift(1) > self.data["BASE"].shift(1)
+        ) & (self.data["BASE"] < self.data["CONVERSION"])
 
         self.data.loc[condition_1_buy & condition_2_buy, "signal"] = 1
         self.data.loc[condition_1_sell & condition_2_sell, "signal"] = -1
@@ -87,8 +94,12 @@ class Ichimoku_1:
         """
         # Verify if we need to close a position and update the variations IF we are in a buy position
         if self.buy:
-            self.var_buy_high = (self.data.loc[time]["high"] - self.open_buy_price) / self.open_buy_price
-            self.var_buy_low = (self.data.loc[time]["low"] - self.open_buy_price) / self.open_buy_price
+            self.var_buy_high = (
+                self.data.loc[time]["high"] - self.open_buy_price
+            ) / self.open_buy_price
+            self.var_buy_low = (
+                self.data.loc[time]["low"] - self.open_buy_price
+            ) / self.open_buy_price
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_buy_high) and (self.var_buy_low < self.sl):
@@ -133,8 +144,14 @@ class Ichimoku_1:
 
         # Verify if we need to close a position and update the variations IF we are in a sell position
         if self.sell:
-            self.var_sell_high = -(self.data.loc[time]["high"] - self.open_sell_price) / self.open_sell_price
-            self.var_sell_low = -(self.data.loc[time]["low"] - self.open_sell_price) / self.open_sell_price
+            self.var_sell_high = (
+                -(self.data.loc[time]["high"] - self.open_sell_price)
+                / self.open_sell_price
+            )
+            self.var_sell_low = (
+                -(self.data.loc[time]["low"] - self.open_sell_price)
+                / self.open_sell_price
+            )
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_sell_low) and (self.var_sell_high < self.sl):

@@ -2,12 +2,13 @@ from Strategies.LI_2023_02_LinSvcQuantile import *
 from Quantreo.CombinatorialPurgedCV import *
 
 
-df = pd.read_csv("../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
+df = pd.read_csv(
+    "../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv",
+    index_col="time",
+    parse_dates=True,
+)
 
-params_range = {
-    "sma_slow": [80., 90.],
-    "atr": [5., 10.]
-}
+params_range = {"sma_slow": [80.0, 90.0], "atr": [5.0, 10.0]}
 
 params_fixed = {
     "look_ahead_period": 20,
@@ -21,8 +22,15 @@ params_fixed = {
     "train_mode": True,
 }
 
-CPCV = CombinatorialPurgedCV(data=df, TradingStrategy=LinSvcQuantile, fixed_parameters=params_fixed,
-                             parameters_range=params_range, N=10, k=2, purge_pct=0.10)
+CPCV = CombinatorialPurgedCV(
+    data=df,
+    TradingStrategy=LinSvcQuantile,
+    fixed_parameters=params_fixed,
+    parameters_range=params_range,
+    N=10,
+    k=2,
+    purge_pct=0.10,
+)
 CPCV.get_index_samples()
 CPCV.get_sub_samples()
 CPCV.run_optimization()

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from Quantreo.Backtest import *
 import itertools
 import warnings
+
 warnings.filterwarnings("ignore")
 
 
@@ -36,7 +37,16 @@ class CombinatorialPurgedCV:
 
     """
 
-    def __init__(self, data, TradingStrategy, fixed_parameters, parameters_range, N=10, k=2, purge_pct=0.10):
+    def __init__(
+        self,
+        data,
+        TradingStrategy,
+        fixed_parameters,
+        parameters_range,
+        N=10,
+        k=2,
+        purge_pct=0.10,
+    ):
         # Set initial parameters
         self.data = data
         self.TradingStrategy = TradingStrategy
@@ -70,8 +80,12 @@ class CombinatorialPurgedCV:
     def get_combinations(self):
         # Create a list of dictionaries with all the possible combination (ONLY with variable parameters)
         keys = list(self.parameters_range.keys())
-        combinations = list(itertools.product(*[self.parameters_range[key] for key in keys]))
-        self.dictionaries = [dict(zip(keys, combination)) for combination in combinations]
+        combinations = list(
+            itertools.product(*[self.parameters_range[key] for key in keys])
+        )
+        self.dictionaries = [
+            dict(zip(keys, combination)) for combination in combinations
+        ]
 
         # We add the fixed parameters on each dictionary
         for dictionary in self.dictionaries:
@@ -85,7 +99,10 @@ class CombinatorialPurgedCV:
         combinations_test = list(combinations(nb_set, self.k))
 
         # Generate the complementary of the combinations (train set)
-        combinations_train = [list(set(nb_set) - set(combinaisons_test)) for combinaisons_test in combinations_test]
+        combinations_train = [
+            list(set(nb_set) - set(combinaisons_test))
+            for combinaisons_test in combinations_test
+        ]
         self.lists = []
 
         # Create a list with the test index and the train index
@@ -162,7 +179,9 @@ class CombinatorialPurgedCV:
                     current_df = new_list_train[-1]
 
                     # Add this set to the previous one because they are consecutive
-                    current_df_updated = pd.concat((current_df, self.df_lists[j][0][i]), axis=0)
+                    current_df_updated = pd.concat(
+                        (current_df, self.df_lists[j][0][i]), axis=0
+                    )
 
                     # Replace the set by the updated set
                     new_list_train[-1] = current_df_updated
@@ -192,7 +211,9 @@ class CombinatorialPurgedCV:
                     current_df = new_list_test[-1]
 
                     # Add this set to the previous one because they are consecutive
-                    current_df_updated = pd.concat((current_df, self.df_lists[j][1][i]), axis=0)
+                    current_df_updated = pd.concat(
+                        (current_df, self.df_lists[j][1][i]), axis=0
+                    )
 
                     # Replace the set by the updated set
                     new_list_test[-1] = current_df_updated
@@ -248,7 +269,11 @@ class CombinatorialPurgedCV:
 
         for tsample in df_list:
             # Compute the returns
-            self.BT = Backtest(data=tsample, TradingStrategy=self.TradingStrategy, parameters=self.output_params)
+            self.BT = Backtest(
+                data=tsample,
+                TradingStrategy=self.TradingStrategy,
+                parameters=self.output_params,
+            )
             self.BT.run()
 
             # Add the returns into the list
@@ -258,7 +283,9 @@ class CombinatorialPurgedCV:
         sets = pd.concat(list_return, axis=0)
 
         # We initialize the Backtest class again (Without running the backtest) just to compute the criterion
-        self.BT = Backtest(data=sets, TradingStrategy=self.TradingStrategy, parameters=self.params_item)
+        self.BT = Backtest(
+            data=sets, TradingStrategy=self.TradingStrategy, parameters=self.params_item
+        )
 
         # Calculation and storage of the criterion (Return over period over the maximum drawdown)
         ret, dd = self.BT.get_ret_dd()
@@ -271,7 +298,9 @@ class CombinatorialPurgedCV:
 
         for self.params_item in self.dictionaries:
             # Extract the variables parameters from the dictionary
-            current_params = [self.params_item[key] for key in list(self.parameters_range.keys())]
+            current_params = [
+                self.params_item[key] for key in list(self.parameters_range.keys())
+            ]
 
             # Compute the criterion and add it to the list of params (criterion train)
             self.get_returns(train=True)
@@ -288,17 +317,25 @@ class CombinatorialPurgedCV:
         self.dfs_list_pbo.append(df_find_params)
 
         # Extract the dataframe line with the best parameters
-        self.best_params_sample_df = df_find_params.sort_values(by="criterion_train", ascending=False).iloc[0:1, :]
+        self.best_params_sample_df = df_find_params.sort_values(
+            by="criterion_train", ascending=False
+        ).iloc[0:1, :]
 
         # !! We put the last index value as index
         # because WITHOUT that when you replace the criterion value later you will replace all value with the same index
         self.best_params_sample_df.index = [self.counter]
 
         # We add the best params to the dataframe which contains all the best params for each period
-        self.df_results = pd.concat((self.df_results, self.best_params_sample_df), axis=0)
+        self.df_results = pd.concat(
+            (self.df_results, self.best_params_sample_df), axis=0
+        )
 
         # Create a dictionary with the best params on the train set in order to test them on the test set later
-        self.best_params_sample = dict(df_find_params.sort_values(by="criterion_train", ascending=False).iloc[0, :-2])
+        self.best_params_sample = dict(
+            df_find_params.sort_values(by="criterion_train", ascending=False).iloc[
+                0, :-2
+            ]
+        )
         self.best_params_sample.update(self.fixed_parameters)
 
     def run_optimization(self):
@@ -328,8 +365,20 @@ class CombinatorialPurgedCV:
             df_train = pd.concat(train_df_list, axis=0)
 
             # Plot the periods for each couple (we add i to the 1 series to can visualize each sets easily)
-            ax.plot(df_train.index, np.ones(len(df_train)) + i, "o", color='#6F9FCA', linewidth=1)
-            ax.plot(df_test.index, np.ones(len(df_test)) + i, "o", color='#CA7F6F', linewidth=1)
+            ax.plot(
+                df_train.index,
+                np.ones(len(df_train)) + i,
+                "o",
+                color="#6F9FCA",
+                linewidth=1,
+            )
+            ax.plot(
+                df_test.index,
+                np.ones(len(df_test)) + i,
+                "o",
+                color="#CA7F6F",
+                linewidth=1,
+            )
 
         # Some layout
         ax.set_title(f"Nb tests: {len(self.df_lists)}")
@@ -342,7 +391,9 @@ class CombinatorialPurgedCV:
             dfp_ordered = ind_df.sort_values(by="criterion_test", ascending=False)
 
             # Re-index the dataframe
-            dfp_ordered.index = [len(dfp_ordered) + 1 - i for i in range(1, len(dfp_ordered) + 1)]
+            dfp_ordered.index = [
+                len(dfp_ordered) + 1 - i for i in range(1, len(dfp_ordered) + 1)
+            ]
 
             # Order the dataframe a second time through the criterion train column
             dfp_rank = dfp_ordered.sort_values(by="criterion_train", ascending=False)
@@ -364,14 +415,24 @@ class CombinatorialPurgedCV:
         self.lmb_series = pd.Series(self.lambdas)
 
         # Compute the probability of overfitting
-        self.pbo = 100 * len(self.lmb_series[self.lmb_series < 0]) / len(self.lmb_series)
+        self.pbo = (
+            100 * len(self.lmb_series[self.lmb_series < 0]) / len(self.lmb_series)
+        )
 
     def get_pbo_graph(self, ax):
-        ax.hist(self.lmb_series, color="#6F9FCA", bins=10, edgecolor='black', density=True)
+        ax.hist(
+            self.lmb_series, color="#6F9FCA", bins=10, edgecolor="black", density=True
+        )
         sns.kdeplot(self.lmb_series, color="#CA6F6F", ax=ax)
-        ax.text(0.95, 0.90, f'Probability of Overfitting: {self.pbo:.2f} %', horizontalalignment='right',
-                verticalalignment='top', transform=ax.transAxes,
-                bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.9'))
+        ax.text(
+            0.95,
+            0.90,
+            f"Probability of Overfitting: {self.pbo:.2f} %",
+            horizontalalignment="right",
+            verticalalignment="top",
+            transform=ax.transAxes,
+            bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.9"),
+        )
         ax.set_title("Hist of Rank Logits")
         ax.set_xlabel("Logits")
         ax.set_ylabel("Frequency")
@@ -387,19 +448,27 @@ class CombinatorialPurgedCV:
 
         # P(SR_OOS < 0)
         ct_oos = self.df_results["criterion_test"]
-        p_oos_pos = 100*len(ct_oos[ct_oos>0]) / len(ct_oos)
+        p_oos_pos = 100 * len(ct_oos[ct_oos > 0]) / len(ct_oos)
 
         ax.scatter(x, y)
-        ax.plot(line_x, line_y, color='#CA6F6F')
-        ax.text(0.95, 0.90, f'P(SR[00S] > 0): {p_oos_pos:.2f} %', horizontalalignment='right',
-                verticalalignment='top', transform=ax.transAxes,
-                bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.9'))
-        ax.set_title(f"Criterion TEST = {coeffs[1]:.2f} + TRAIN * {coeffs[0]:.2f} + epsilon")
+        ax.plot(line_x, line_y, color="#CA6F6F")
+        ax.text(
+            0.95,
+            0.90,
+            f"P(SR[00S] > 0): {p_oos_pos:.2f} %",
+            horizontalalignment="right",
+            verticalalignment="top",
+            transform=ax.transAxes,
+            bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.9"),
+        )
+        ax.set_title(
+            f"Criterion TEST = {coeffs[1]:.2f} + TRAIN * {coeffs[0]:.2f} + epsilon"
+        )
         ax.set_xlabel("Criterion Train")
         ax.set_ylabel("Criterion Test")
 
     def display_all_graph(self):
-        fig, axes = plt.subplot_mosaic('AB;CC', figsize=(15, 8))
+        fig, axes = plt.subplot_mosaic("AB;CC", figsize=(15, 8))
 
         self.get_pbo_graph(axes["A"])
         self.get_degration_graph(axes["B"])
