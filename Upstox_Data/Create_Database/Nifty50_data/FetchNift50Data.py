@@ -94,7 +94,7 @@ if __name__ == "__main__":
     nifty50_dict = raw_json.get_nifty50_values()
 
     # to create monthly data, uncomment below line
-    write_to_csv("Monthly", "month")
+    # write_to_csv("Monthly", "month")
 
     # to create weekly data, uncomment below line
     # write_to_csv("Weekly", "week")
