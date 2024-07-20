@@ -1,9 +1,12 @@
 import json
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Upstox_Data.Create_Database.historical_data_fetcher import HistoricalDataFetcher
 
-def write_to_csv(output_dir, interval):
 
+def write_to_csv(output_dir, interval):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -91,11 +94,10 @@ if __name__ == "__main__":
     nifty50_dict = raw_json.get_nifty50_values()
 
     # to create monthly data, uncomment below line
-    # write_to_csv("Monthly", "month")
+    write_to_csv("Monthly", "month")
 
     # to create weekly data, uncomment below line
     # write_to_csv("Weekly", "week")
 
     # to create daily data, uncomment below line
     # write_to_csv("Daily", "day")
-
