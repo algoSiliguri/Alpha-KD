@@ -1,4 +1,5 @@
 import requests
+import urllib.parse
 
 
 class UpstoxAuth:
@@ -8,7 +9,14 @@ class UpstoxAuth:
         self.redirect_uri = redirect_uri
 
     def get_login_url(self):
-        return f"https://api.upstox.com/index/dialog/authorize?apiKey={self.api_key}&redirect_uri={self.redirect_uri}&response_type=code"
+        base_url = "https://api.upstox.com/v2/login/authorization/dialog"
+        params = {
+            "response_type": "code",
+            "client_id": self.api_key,
+            "redirect_uri": self.redirect_uri,
+        }
+        login_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+        return login_url
 
     def get_auth_code(self):
         login_url = self.get_login_url()
@@ -17,7 +25,11 @@ class UpstoxAuth:
         return auth_code
 
     def get_access_token(self, auth_code):
-        url = "https://api.upstox.com/index/oauth/token"
+        url = "https://api.upstox.com/v2/login/authorization/token"
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
         payload = {
             "code": auth_code,
             "client_id": self.api_key,
@@ -25,7 +37,7 @@ class UpstoxAuth:
             "redirect_uri": self.redirect_uri,
             "grant_type": "authorization_code",
         }
-        response = requests.post(url, data=payload)
+        response = requests.post(url, headers=headers, data=payload)
         if response.status_code == 200:
             return response.json()
         else:
