@@ -5,7 +5,7 @@ from upstox_auth import UpstoxAuth
 
 def main():
     properties_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "application.properties"
+        os.path.dirname(__file__), "upstox_config.properties"
     )
     config_reader = ConfigReader(properties_path)
 
