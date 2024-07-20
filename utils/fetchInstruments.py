@@ -12,7 +12,7 @@ def process_instruments(instruments_data):
     data = []
     for instrument in instruments_data:
         if instrument["segment"] == "NSE_EQ":
-            instrumentkey = instrument["instrument_key"].split("|")[1].strip()
+            instrumentkey = instrument["instrument_key"]
             data.append({instrument["trading_symbol"].strip(): instrumentkey})
 
     return data
