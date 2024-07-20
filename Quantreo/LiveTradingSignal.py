@@ -20,8 +20,12 @@ def li_2023_02_RsiSma(symbol, timeframe, fast_sma_period, slow_sma_period, rsi_p
 
     # def signal
     df["RSI_retarded"] = df[f"RSI"].shift(1)
-    condition_1_buy = df[f"SMA_{fast_sma_period}"].iloc[-1] < df[f"SMA_{slow_sma_period}"].iloc[-1]
-    condition_1_sell = df[f"SMA_{fast_sma_period}"].iloc[-1] > df[f"SMA_{slow_sma_period}"].iloc[-1]
+    condition_1_buy = (
+        df[f"SMA_{fast_sma_period}"].iloc[-1] < df[f"SMA_{slow_sma_period}"].iloc[-1]
+    )
+    condition_1_sell = (
+        df[f"SMA_{fast_sma_period}"].iloc[-1] > df[f"SMA_{slow_sma_period}"].iloc[-1]
+    )
 
     condition_2_buy = df[f"RSI"].iloc[-1] > df["RSI_retarded"].iloc[-1]
     condition_2_sell = df[f"RSI"].iloc[-1] < df["RSI_retarded"].iloc[-1]
@@ -31,7 +35,15 @@ def li_2023_02_RsiSma(symbol, timeframe, fast_sma_period, slow_sma_period, rsi_p
     return buy, sell
 
 
-def li_2023_02_LogRegQuantile(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path):
+def li_2023_02_LogRegQuantile(
+    symbol,
+    timeframe,
+    sma_fast_period,
+    slow_sma_period,
+    rsi_period,
+    atr_period,
+    model_path,
+):
     df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
 
     df = sma_diff(df, "close", sma_fast_period, slow_sma_period)
@@ -52,7 +64,9 @@ def li_2023_02_LogRegQuantile(symbol, timeframe, sma_fast_period, slow_sma_perio
     return buy, sell
 
 
-def li_2023_02_RsiSmaAtr(symbol, timeframe, fast_sma_period, slow_sma_period, rsi_period):
+def li_2023_02_RsiSmaAtr(
+    symbol, timeframe, fast_sma_period, slow_sma_period, rsi_period
+):
     df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
     df = sma(df, "close", fast_sma_period)
     df = sma(df, "close", slow_sma_period)
@@ -60,8 +74,12 @@ def li_2023_02_RsiSmaAtr(symbol, timeframe, fast_sma_period, slow_sma_period, rs
 
     # def signal
     df["RSI_retarded"] = df[f"RSI"].shift(1)
-    condition_1_buy = df[f"SMA_{fast_sma_period}"].iloc[-1] < df[f"SMA_{slow_sma_period}"].iloc[-1]
-    condition_1_sell = df[f"SMA_{fast_sma_period}"].iloc[-1] > df[f"SMA_{slow_sma_period}"].iloc[-1]
+    condition_1_buy = (
+        df[f"SMA_{fast_sma_period}"].iloc[-1] < df[f"SMA_{slow_sma_period}"].iloc[-1]
+    )
+    condition_1_sell = (
+        df[f"SMA_{fast_sma_period}"].iloc[-1] > df[f"SMA_{slow_sma_period}"].iloc[-1]
+    )
 
     condition_2_buy = df[f"RSI"].iloc[-1] > df["RSI_retarded"].iloc[-1]
     condition_2_sell = df[f"RSI"].iloc[-1] < df["RSI_retarded"].iloc[-1]
@@ -88,8 +106,12 @@ def li_2023_02_Ichimoku_1(symbol, timeframe, ichi_window_1, ichi_window_2):
     condition_1_buy = df["SPAN_A"].iloc[-1] > df["SPAN_B"].iloc[-1]
     condition_1_sell = df["SPAN_A"].iloc[-1] < df["SPAN_B"].iloc[-1]
 
-    condition_2_buy = (df["CONVERSION"].shift(1).iloc[-1] < df["BASE"].shift(1).iloc[-1]) & (df["BASE"].iloc[-1] < df["CONVERSION"].iloc[-1])
-    condition_2_sell = (df["CONVERSION"].shift(1).iloc[-1] > df["BASE"].shift(1).iloc[-1]) & (df["BASE"].iloc[-1] < df["CONVERSION"].iloc[-1])
+    condition_2_buy = (
+        df["CONVERSION"].shift(1).iloc[-1] < df["BASE"].shift(1).iloc[-1]
+    ) & (df["BASE"].iloc[-1] < df["CONVERSION"].iloc[-1])
+    condition_2_sell = (
+        df["CONVERSION"].shift(1).iloc[-1] > df["BASE"].shift(1).iloc[-1]
+    ) & (df["BASE"].iloc[-1] < df["CONVERSION"].iloc[-1])
 
     buy = condition_1_buy & condition_2_buy
     sell = condition_1_sell & condition_2_sell
@@ -105,9 +127,11 @@ def li_2023_02_StoRsiAtr(symbol, timeframe, sto_period, atr_period):
     condition_1_sell = (df["STO_RSI_K"].iloc[-1] > 70) & (df["STO_RSI_D"].iloc[-1] > 70)
 
     condition_2_buy = (df["STO_RSI_K"].iloc[-1] < df["STO_RSI_D"].iloc[-1]) & (
-                df["STO_RSI_K"].shift(1).iloc[-1] > df["STO_RSI_D"].shift(1).iloc[-1])
+        df["STO_RSI_K"].shift(1).iloc[-1] > df["STO_RSI_D"].shift(1).iloc[-1]
+    )
     condition_2_sell = (df["STO_RSI_K"].iloc[-1] > df["STO_RSI_D"].iloc[-1]) & (
-                df["STO_RSI_K"].shift(1).iloc[-1] < df["STO_RSI_D"].shift(1).iloc[-1])
+        df["STO_RSI_K"].shift(1).iloc[-1] < df["STO_RSI_D"].shift(1).iloc[-1]
+    )
 
     buy = condition_1_buy & condition_2_buy
     sell = condition_1_sell & condition_2_sell
@@ -124,7 +148,16 @@ def li_2023_02_StoRsiAtr(symbol, timeframe, sto_period, atr_period):
     return buy, sell, pct_tp, np.abs(pct_sl)
 
 
-def li_2023_02_LinSvcQuantile(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path, sc_path):
+def li_2023_02_LinSvcQuantile(
+    symbol,
+    timeframe,
+    sma_fast_period,
+    slow_sma_period,
+    rsi_period,
+    atr_period,
+    model_path,
+    sc_path,
+):
     df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
 
     df = sma_diff(df, "close", sma_fast_period, slow_sma_period)
@@ -147,8 +180,17 @@ def li_2023_02_LinSvcQuantile(symbol, timeframe, sma_fast_period, slow_sma_perio
     return buy, sell
 
 
-def li_2023_02_TreePcaQuantile(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path,
-                               sc_path, pca_path):
+def li_2023_02_TreePcaQuantile(
+    symbol,
+    timeframe,
+    sma_fast_period,
+    slow_sma_period,
+    rsi_period,
+    atr_period,
+    model_path,
+    sc_path,
+    pca_path,
+):
     df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
 
     df = sma_diff(df, "close", sma_fast_period, slow_sma_period)
@@ -165,8 +207,21 @@ def li_2023_02_TreePcaQuantile(symbol, timeframe, sma_fast_period, slow_sma_peri
     sc = load(sc_path)
     pca = load(pca_path)
 
-    list_X = ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
-               "STO_RSI_D", "STO_RSI_K", "previous_ret"]
+    list_X = [
+        "SMA_diff",
+        "RSI",
+        "ATR",
+        "candle_way",
+        "filling",
+        "amplitude",
+        "SPAN_A",
+        "SPAN_B",
+        "BASE",
+        "STO_RSI",
+        "STO_RSI_D",
+        "STO_RSI_K",
+        "previous_ret",
+    ]
     X = df[list_X]
     X_sc = sc.transform(X)
     X_pca = pca.transform(X_sc)

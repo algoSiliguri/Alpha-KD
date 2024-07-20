@@ -19,7 +19,6 @@ from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 
 
-
 class LinSvcQuantile:
 
     def __init__(self, data, parameters):
@@ -65,7 +64,7 @@ class LinSvcQuantile:
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
 
-        data_sample = atr(data_sample,self.atr_period)
+        data_sample = atr(data_sample, self.atr_period)
         data_sample = data_sample.fillna(value=0)
 
         return data_sample
@@ -78,13 +77,17 @@ class LinSvcQuantile:
         self.data_train = self.get_features(self.data_train)
 
         # Create lists with the columns name of the features used and the target
-        self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
+        self.data_train = quantile_signal(
+            self.data_train, self.look_ahead_period, pct_split=full_split
+        )
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
         split = int(len(self.data_train) * full_split)
-        X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
+        X_train, X_test, y_train, y_test = data_split(
+            self.data_train, split, self.list_X, list_y
+        )
 
         # Initialize the standardization model
         sc = StandardScaler()
@@ -158,8 +161,12 @@ class LinSvcQuantile:
         """
         # Verify if we need to close a position and update the variations IF we are in a buy position
         if self.buy:
-            self.var_buy_high = (self.data.loc[time]["high"] - self.open_buy_price) / self.open_buy_price
-            self.var_buy_low = (self.data.loc[time]["low"] - self.open_buy_price) / self.open_buy_price
+            self.var_buy_high = (
+                self.data.loc[time]["high"] - self.open_buy_price
+            ) / self.open_buy_price
+            self.var_buy_low = (
+                self.data.loc[time]["low"] - self.open_buy_price
+            ) / self.open_buy_price
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_buy_high) and (self.var_buy_low < self.sl):
@@ -204,8 +211,14 @@ class LinSvcQuantile:
 
         # Verify if we need to close a position and update the variations IF we are in a sell position
         if self.sell:
-            self.var_sell_high = -(self.data.loc[time]["high"] - self.open_sell_price) / self.open_sell_price
-            self.var_sell_low = -(self.data.loc[time]["low"] - self.open_sell_price) / self.open_sell_price
+            self.var_sell_high = (
+                -(self.data.loc[time]["high"] - self.open_sell_price)
+                / self.open_sell_price
+            )
+            self.var_sell_low = (
+                -(self.data.loc[time]["low"] - self.open_sell_price)
+                / self.open_sell_price
+            )
 
             # Let's check if AT LEAST one of our threshold are touched on this row
             if (self.tp < self.var_sell_low) and (self.var_sell_high < self.sl):

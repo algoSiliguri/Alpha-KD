@@ -4,7 +4,7 @@ import numpy as np
 
 
 def sma(df, col, n):
-    df[f"SMA_{n}"] = ta.trend.SMAIndicator(df[col],int(n)).sma_indicator()
+    df[f"SMA_{n}"] = ta.trend.SMAIndicator(df[col], int(n)).sma_indicator()
     return df
 
 
@@ -19,13 +19,15 @@ def sma_diff(df, col, n, m):
 
 def rsi(df, col, n):
     df = df.copy()
-    df[f"RSI"] = ta.momentum.RSIIndicator(df[col],int(n)).rsi()
+    df[f"RSI"] = ta.momentum.RSIIndicator(df[col], int(n)).rsi()
     return df
 
 
 def atr(df, n):
     df = df.copy()
-    df[f"ATR"] = ta.volatility.AverageTrueRange(df["high"], df["low"], df["close"], int(n)).average_true_range()
+    df[f"ATR"] = ta.volatility.AverageTrueRange(
+        df["high"], df["low"], df["close"], int(n)
+    ).average_true_range()
     return df
 
 
@@ -39,7 +41,7 @@ def sto_rsi(df, col, n):
     return df
 
 
-def ichimoku(df,n1,n2):
+def ichimoku(df, n1, n2):
     ICHIMOKU = ta.trend.IchimokuIndicator(df["high"], df["low"], int(n1), int(n2))
     df["SPAN_A"] = ICHIMOKU.ichimoku_a()
     df["SPAN_B"] = ICHIMOKU.ichimoku_b()
@@ -47,7 +49,8 @@ def ichimoku(df,n1,n2):
     df["CONVERSION"] = ICHIMOKU.ichimoku_conversion_line()
     return df
 
-def previous_ret(df,col,n):
+
+def previous_ret(df, col, n):
     df["previous_ret"] = (df[col].shift(int(n)) - df[col]) / df[col]
     return df
 
@@ -56,10 +59,11 @@ def k_enveloppe(df, n=10):
     df[f"EMA_HIGH_{n}"] = df["high"].ewm(span=n).mean()
     df[f"EMA_LOW_{n}"] = df["low"].ewm(span=n).mean()
 
-    df["pivots_high"] = (df["close"] - df[f"EMA_HIGH_{n}"])/ df[f"EMA_HIGH_{n}"]
-    df["pivots_low"] = (df["close"] - df[f"EMA_LOW_{n}"])/ df[f"EMA_LOW_{n}"]
-    df["pivots"] = (df["pivots_high"]+df["pivots_low"])/2
+    df["pivots_high"] = (df["close"] - df[f"EMA_HIGH_{n}"]) / df[f"EMA_HIGH_{n}"]
+    df["pivots_low"] = (df["close"] - df[f"EMA_LOW_{n}"]) / df[f"EMA_LOW_{n}"]
+    df["pivots"] = (df["pivots_high"] + df["pivots_low"]) / 2
     return df
+
 
 def candle_information(df):
     # Candle color
@@ -70,23 +74,27 @@ def candle_information(df):
     df["filling"] = np.abs(df["close"] - df["open"]) / np.abs(df["high"] - df["low"])
 
     # Amplitude
-    df["amplitude"] = np.abs(df["close"] - df["open"]) / (df["open"] / 2 + df["close"] / 2) * 100
+    df["amplitude"] = (
+        np.abs(df["close"] - df["open"]) / (df["open"] / 2 + df["close"] / 2) * 100
+    )
 
     return df
+
 
 def data_split(df_model, split, list_X, list_y):
 
     # Train set creation
-    X_train = df_model[list_X].iloc[0:split-1, :]
+    X_train = df_model[list_X].iloc[0 : split - 1, :]
     y_train = df_model[list_y].iloc[1:split]
 
     # Test set creation
     X_test = df_model[list_X].iloc[split:-1, :]
-    y_test = df_model[list_y].iloc[split+1:]
+    y_test = df_model[list_y].iloc[split + 1 :]
 
     return X_train, X_test, y_train, y_test
 
-def quantile_signal(df, n, quantile_level=0.67,pct_split=0.8):
+
+def quantile_signal(df, n, quantile_level=0.67, pct_split=0.8):
 
     n = int(n)
 
@@ -97,18 +105,27 @@ def quantile_signal(df, n, quantile_level=0.67,pct_split=0.8):
     df_copy = df.copy()
 
     # Create the fut_ret column to be able to create the signal
-    df_copy["fut_ret"] = (df_copy["close"].shift(-n) - df_copy["open"]) / df_copy["open"]
+    df_copy["fut_ret"] = (df_copy["close"].shift(-n) - df_copy["open"]) / df_copy[
+        "open"
+    ]
 
     # Create a column by name, 'Signal' and initialize with 0
-    df_copy['Signal'] = 0
+    df_copy["Signal"] = 0
 
     # Assign a value of 1 to 'Signal' column for the quantile with the highest returns
-    df_copy.loc[df_copy['fut_ret'] > df_copy['fut_ret'][:split].quantile(q=quantile_level), 'Signal'] = 1
+    df_copy.loc[
+        df_copy["fut_ret"] > df_copy["fut_ret"][:split].quantile(q=quantile_level),
+        "Signal",
+    ] = 1
 
     # Assign a value of -1 to 'Signal' column for the quantile with the lowest returns
-    df_copy.loc[df_copy['fut_ret'] < df_copy['fut_ret'][:split].quantile(q=1-quantile_level), 'Signal'] = -1
+    df_copy.loc[
+        df_copy["fut_ret"] < df_copy["fut_ret"][:split].quantile(q=1 - quantile_level),
+        "Signal",
+    ] = -1
 
     return df_copy
+
 
 def binary_signal(df, n):
 
@@ -118,12 +135,14 @@ def binary_signal(df, n):
     df_copy = df.copy()
 
     # Create the fut_ret column to be able to create the signal
-    df_copy["fut_ret"] = (df_copy["close"].shift(-n) - df_copy["open"]) / df_copy["open"]
+    df_copy["fut_ret"] = (df_copy["close"].shift(-n) - df_copy["open"]) / df_copy[
+        "open"
+    ]
 
     # Create a column by name, 'Signal' and initialize with 0
-    df_copy['Signal'] = -1
+    df_copy["Signal"] = -1
 
     # Assign a value of 1 to 'Signal' column for the quantile with the highest returns
-    df_copy.loc[df_copy['fut_ret'] > 0, 'Signal'] = 1
+    df_copy.loc[df_copy["fut_ret"] > 0, "Signal"] = 1
 
     return df_copy

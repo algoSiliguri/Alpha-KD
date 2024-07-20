@@ -1,9 +1,14 @@
 from Quantreo.MonteCarlo import *
 from Strategies.LI_2023_02_BinLogReg import *
 import warnings
+
 warnings.filterwarnings("ignore")
 
-df = pd.read_csv("../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
+df = pd.read_csv(
+    "../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv",
+    index_col="time",
+    parse_dates=True,
+)
 
 params = {
     "tp": 0.0035,
@@ -19,6 +24,6 @@ params = {
     "train_mode": True,
 }
 
-MC = MonteCarlo(df, BinLogReg, params, raw_columns=[], discount_calmar_ratio = 252*6)
+MC = MonteCarlo(df, BinLogReg, params, raw_columns=[], discount_calmar_ratio=252 * 6)
 MC.generate_paths(500, 2000)
 MC.display_results()

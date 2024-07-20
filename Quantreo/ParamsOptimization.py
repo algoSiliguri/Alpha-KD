@@ -29,8 +29,12 @@ class ParamsOptimization:
     def get_combinations(self):
         # Create a list of dictionaries with all the possible combination (ONLY with variable parameters)
         keys = list(self.parameters_range.keys())
-        combinations = list(itertools.product(*[self.parameters_range[key] for key in keys]))
-        self.dictionaries = [dict(zip(keys, combination)) for combination in combinations]
+        combinations = list(
+            itertools.product(*[self.parameters_range[key] for key in keys])
+        )
+        self.dictionaries = [
+            dict(zip(keys, combination)) for combination in combinations
+        ]
 
         # We add the fixed parameters on each dictionary
         for dictionary in self.dictionaries:
@@ -38,7 +42,9 @@ class ParamsOptimization:
 
     def get_criterion(self, sample, params):
         # Backtest initialization with a specif dataset and set of parameters
-        self.BT = Backtest(data=sample, TradingStrategy=self.TradingStrategy, parameters=params)
+        self.BT = Backtest(
+            data=sample, TradingStrategy=self.TradingStrategy, parameters=params
+        )
 
         # Compute the returns of the strategy (on this specific datasets and with these parameters)
         self.BT.run()
@@ -55,7 +61,9 @@ class ParamsOptimization:
 
         for self.params_item in self.dictionaries:
             # Extract the variables parameters from the dictionary
-            current_params = [self.params_item[key] for key in list(self.parameters_range.keys())]
+            current_params = [
+                self.params_item[key] for key in list(self.parameters_range.keys())
+            ]
 
             # Compute the criterion and add it to the list of params
             self.get_criterion(self.data, self.params_item)
@@ -67,9 +75,12 @@ class ParamsOptimization:
         df_find_params = pd.DataFrame(storage_values_params, columns=self.columns)
 
         # Extract the dataframe line with the best parameters
-        self.best_params_sample_df = df_find_params.sort_values(by="criterion", ascending=False).iloc[0:1, :]
+        self.best_params_sample_df = df_find_params.sort_values(
+            by="criterion", ascending=False
+        ).iloc[0:1, :]
 
         # Create a dictionary with the best params on the train set in order to test them on the test set later
-        self.best_params_sample = dict(df_find_params.sort_values(by="criterion", ascending=False).iloc[0, :-1])
+        self.best_params_sample = dict(
+            df_find_params.sort_values(by="criterion", ascending=False).iloc[0, :-1]
+        )
         self.best_params_sample.update(self.fixed_parameters)
-

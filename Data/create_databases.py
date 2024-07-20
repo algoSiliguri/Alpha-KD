@@ -23,6 +23,7 @@ def get_rates(symbol, number_of_data=10_000, timeframe=mt5.TIMEFRAME_D1):
 
     return df_rates
 
+
 # !! You can't import more than 99.999 rows in one request
 df = get_rates("AUDUSD-Z", number_of_data=30_000, timeframe=mt5.TIMEFRAME_H4)
 
@@ -30,13 +31,14 @@ df = get_rates("AUDUSD-Z", number_of_data=30_000, timeframe=mt5.TIMEFRAME_H4)
 print(df)
 
 # Put where you want to save the database
-save_path = input("Write the path to store the file if you want to (if not, just press enter):")
+save_path = input(
+    "Write the path to store the file if you want to (if not, just press enter):"
+)
 
 # Save the database if you had put a path
-if len(save_path)>0:
+if len(save_path) > 0:
     df.to_csv(save_path)
 
 
-
 ###### Exercise
-#- Do the same thing, for one of the 3 other function (copy_rates_range, copy_ticks_from or copy_ticks_range)
+# - Do the same thing, for one of the 3 other function (copy_rates_range, copy_ticks_from or copy_ticks_range)

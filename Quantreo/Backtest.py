@@ -33,11 +33,13 @@ class Backtest:
         The title of the backtest's plot. If None, a default title will be used.
     """
 
-    def __init__(self, data, TradingStrategy, parameters, run_directly=False, title=None):
+    def __init__(
+        self, data, TradingStrategy, parameters, run_directly=False, title=None
+    ):
         # Set parameters
         self.TradingStrategy = TradingStrategy(data, parameters)
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
-        self.data = data.loc[self.start_date_backtest:]
+        self.data = data.loc[self.start_date_backtest :]
 
         if "returns" not in self.data.columns:
             self.data["returns"] = 0
@@ -61,17 +63,23 @@ class Backtest:
         for current_time in self.data.index:
 
             # Maybe open a position
-            entry_signal, self.entry_trade_time = self.TradingStrategy.get_entry_signal(current_time)
+            entry_signal, self.entry_trade_time = self.TradingStrategy.get_entry_signal(
+                current_time
+            )
             self.data.loc[current_time, "buy_count"] = 1 if entry_signal == 1 else 0
             self.data.loc[current_time, "sell_count"] = 1 if entry_signal == -1 else 0
 
             # Maybe close a position
-            position_return, self.exit_trade_time = self.TradingStrategy.get_exit_signal(current_time)
+            position_return, self.exit_trade_time = (
+                self.TradingStrategy.get_exit_signal(current_time)
+            )
 
             # Store position return and duration when we close a trade
             if position_return != 0:
                 self.data.loc[current_time, "returns"] = position_return
-                self.data.loc[current_time, "duration"] = (self.exit_trade_time - self.entry_trade_time).total_seconds()
+                self.data.loc[current_time, "duration"] = (
+                    self.exit_trade_time - self.entry_trade_time
+                ).total_seconds()
 
     def get_vector_metrics(self):
         # Compute Cumulative Returns
@@ -93,7 +101,7 @@ class Backtest:
         drawdown = self.data["drawdown"]
 
         # Set font style
-        plt.rc('font', weight='bold', size=12)
+        plt.rc("font", weight="bold", size=12)
 
         # Put a subplots
         fig, (cum, dra) = plt.subplots(2, 1, figsize=(15, 7))
@@ -102,24 +110,33 @@ class Backtest:
 
         # Change suptitle if we put one in the input or put the title by default
         if title is None:
-            fig.suptitle("Overview of the Strategy", size=18, fontweight='bold')
+            fig.suptitle("Overview of the Strategy", size=18, fontweight="bold")
         else:
-            fig.suptitle(title, size=18, fontweight='bold')
+            fig.suptitle(title, size=18, fontweight="bold")
 
         # Returns cumsum chart
-        cum.plot(cum_ret*100, color="#569878",linewidth=1.5)
-        cum.fill_between(cum_ret.index, cum_ret * 100, 0,
-                         cum_ret >= 0, color="#569878", alpha=0.30)
+        cum.plot(cum_ret * 100, color="#569878", linewidth=1.5)
+        cum.fill_between(
+            cum_ret.index, cum_ret * 100, 0, cum_ret >= 0, color="#569878", alpha=0.30
+        )
         cum.axhline(0, color="#569878")
-        cum.grid(axis="y", color='#505050', linestyle='--', linewidth=1, alpha=0.5)
-        cum.set_ylabel("Cumulative Return (%)", size=15, fontweight='bold')
+        cum.grid(axis="y", color="#505050", linestyle="--", linewidth=1, alpha=0.5)
+        cum.set_ylabel("Cumulative Return (%)", size=15, fontweight="bold")
 
         # Put the drawdown
-        dra.plot(drawdown.index, drawdown * 100, color="#C04E4E", alpha=0.50, linewidth=0.5)
-        dra.fill_between(drawdown.index, drawdown * 100, 0,
-                         drawdown * 100 <= 0, color="#C04E4E", alpha=0.30)
-        dra.grid(axis="y", color='#505050', linestyle='--', linewidth=1, alpha=0.5)
-        dra.set_ylabel("Drawdown (%)", size=15, fontweight='bold')
+        dra.plot(
+            drawdown.index, drawdown * 100, color="#C04E4E", alpha=0.50, linewidth=0.5
+        )
+        dra.fill_between(
+            drawdown.index,
+            drawdown * 100,
+            0,
+            drawdown * 100 <= 0,
+            color="#C04E4E",
+            alpha=0.30,
+        )
+        dra.grid(axis="y", color="#505050", linestyle="--", linewidth=1, alpha=0.5)
+        dra.set_ylabel("Drawdown (%)", size=15, fontweight="bold")
 
         # Plot the graph
         plt.show()
@@ -157,13 +174,28 @@ class Backtest:
         hit = nb_trade_positive * 100 / (nb_trade_positive + nb_trade_negative)
 
         # Risk reward ratio
-        average_winning_value = self.data.loc[self.data["returns"] > 0]["returns"].mean()
+        average_winning_value = self.data.loc[self.data["returns"] > 0][
+            "returns"
+        ].mean()
         average_losing_value = self.data.loc[self.data["returns"] < 0]["returns"].mean()
 
         rr_ratio = -average_winning_value / average_losing_value
 
         # Metric ret/month
-        months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+        months = [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "11",
+            "12",
+        ]
         years = ["2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"]
 
         # Computation monthly returns
@@ -180,21 +212,35 @@ class Backtest:
 
         sr = pd.Series(ben_month, name="returns")
 
-        pct_winning_month = (1-(len(sr[sr <= 0]) / len(sr)))*100
+        pct_winning_month = (1 - (len(sr[sr <= 0]) / len(sr))) * 100
         best_month_return = np.max(ben_month) * 100
         worse_month_return = np.min(ben_month) * 100
 
         # Average monthly return
         cmgr = np.mean(ben_month) * 100
 
-        print("------------------------------------------------------------------------------------------------------------------")
-        print(f" AVERAGE TRADE LIFETIME: {days}D  {hours_left}H  {minutes_left}M \t Nb BUY: {buy_count} \t Nb SELL: {sell_count} ")
-        print("                                                                                                                  ")
-        print(f" Return (period): {'%.2f' % return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % dd_max}%")
+        print(
+            "------------------------------------------------------------------------------------------------------------------"
+        )
+        print(
+            f" AVERAGE TRADE LIFETIME: {days}D  {hours_left}H  {minutes_left}M \t Nb BUY: {buy_count} \t Nb SELL: {sell_count} "
+        )
+        print(
+            "                                                                                                                  "
+        )
+        print(
+            f" Return (period): {'%.2f' % return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % dd_max}%"
+        )
         print(f" HIT ratio: {'%.2f' % hit}% \t\t\t\t\t\t R ratio: {'%.2f' % rr_ratio}")
-        print(f" Best month return: {'%.2f' % best_month_return}% \t\t\t\t Worse month return: {'%.2f' % worse_month_return}%")
-        print(f" Average ret/month: {'%.2f' % cmgr}% \t\t\t\t Profitable months: {'%.2f' % pct_winning_month}%")
-        print("------------------------------------------------------------------------------------------------------------------")
+        print(
+            f" Best month return: {'%.2f' % best_month_return}% \t\t\t\t Worse month return: {'%.2f' % worse_month_return}%"
+        )
+        print(
+            f" Average ret/month: {'%.2f' % cmgr}% \t\t\t\t Profitable months: {'%.2f' % pct_winning_month}%"
+        )
+        print(
+            "------------------------------------------------------------------------------------------------------------------"
+        )
 
     def get_ret_dd(self):
         self.get_vector_metrics()
