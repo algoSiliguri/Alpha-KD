@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore")
 
 
 df = pd.read_csv(
-    "../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv",
+    "../Data/FixTimeBars/ADANI_ready.csv",
     index_col="time",
     parse_dates=True,
 )

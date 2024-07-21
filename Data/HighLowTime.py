@@ -59,12 +59,12 @@ def find_timestamp_extremum(df, df_lower_timeframe):
     return df
 
 
-# Example usage
+# # Example usage
 # df_low_tf = pd.read_csv(
-#   "../Upstox_Data/Fixed_Time_Bars/AdaniPorts Daily.csv", index_col="time", parse_dates=True
+#   "../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv", index_col="time", parse_dates=True
 # )
 # df_high_tf = pd.read_csv(
-#   "../Upstox_Data/Fixed_Time_Bars/AdaniPorts Weekly.csv", index_col="time", parse_dates=True
+#   "../Upstox_Data/Create_Database/Nifty50_data/Weekly/ADANIENT_Weekly.csv", index_col="time", parse_dates=True
 # )
 #
 # df = find_timestamp_extremum(df_high_tf, df_low_tf)
