@@ -3,7 +3,7 @@ import json
 
 def load_instruments(file_path):
     """Load instruments data from a JSON file."""
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         return json.load(f)
 
 
@@ -20,19 +20,19 @@ def process_instruments(instruments_data):
 
 def save_to_file(data, file_path):
     """Save the processed data to a json file."""
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
 
 
 def main():
     # Load instruments data
-    instruments_data = load_instruments('instruments.json')
+    instruments_data = load_instruments("instruments.json")
 
     # Process instruments data
     processed_data = process_instruments(instruments_data)
 
     # Save processed data to a json file
-    save_to_file(processed_data, 'instrumentsData.json')
+    save_to_file(processed_data, "instrumentsData.json")
 
 
 if __name__ == "__main__":

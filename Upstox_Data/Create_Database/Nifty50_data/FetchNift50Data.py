@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from Upstox_Data.Create_Database.historical_data_fetcher import HistoricalDataFetcher
 
 
@@ -71,12 +71,12 @@ class Nifty50Fetcher:
             "HDFCLIFE",
             "BPCL",
             "DIVISLAB",
-            "LTIM"
+            "LTIM",
         ]
         self.data = self.load_json()
 
     def load_json(self):
-        with open(self.json_file, 'r') as file:
+        with open(self.json_file, "r") as file:
             return json.load(file)
 
     def get_nifty50_values(self):
@@ -90,7 +90,7 @@ class Nifty50Fetcher:
 
 if __name__ == "__main__":
     fetcher = HistoricalDataFetcher()
-    raw_json = Nifty50Fetcher('instrumentsData.json')
+    raw_json = Nifty50Fetcher("instrumentsData.json")
     nifty50_dict = raw_json.get_nifty50_values()
 
     # to create monthly data, uncomment below line
