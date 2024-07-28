@@ -23,14 +23,6 @@ def rsi(df, col, n):
     return df
 
 
-def atr(df, n):
-    df = df.copy()
-    df[f"ATR"] = ta.volatility.AverageTrueRange(
-        df["high"], df["low"], df["close"], int(n)
-    ).average_true_range()
-    return df
-
-
 def sto_rsi(df, col, n):
     df = df.copy()
 
@@ -146,3 +138,49 @@ def binary_signal(df, n):
     df_copy.loc[df_copy["fut_ret"] > 0, "Signal"] = 1
 
     return df_copy
+
+
+# /////////////////////////////////////////////// New Implementations/////////////////////////////////
+def cci(df, window, constant=0.015, fillna=False):
+    """
+    Calculate the Commodity Channel Index (CCI) and add it to the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the price data.
+    window (int): The period over which to calculate the CCI.
+    constant (float): The constant used in the CCI calculation (default is 0.015).
+    fillna (bool): If True, fill NaN values (default is False).
+
+    Returns:
+    pd.DataFrame: The DataFrame with the CCI added as a new column.
+    """
+    df = df.copy()  # Ensure we are working with a copy
+    cci_indicator = ta.trend.CCIIndicator(
+        high=df["high"],
+        low=df["low"],
+        close=df["close"],
+        window=window,
+        constant=constant,
+        fillna=fillna,
+    )
+    df.loc[:, f"CCI_{window}"] = cci_indicator.cci()
+    return df
+
+
+def atr(df, window):
+    """
+    Calculate the Average True Range (ATR) and add it to the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the price data.
+    window (int): The period over which to calculate the ATR.
+
+    Returns:
+    pd.DataFrame: The DataFrame with the ATR added as a new column.
+    """
+    df = df.copy()  # Ensure we are working with a copy
+    atr_indicator = ta.volatility.AverageTrueRange(
+        high=df["high"], low=df["low"], close=df["close"], window=window, fillna=False
+    )
+    df.loc[:, f"ATR_{window}"] = atr_indicator.average_true_range()
+    return df
