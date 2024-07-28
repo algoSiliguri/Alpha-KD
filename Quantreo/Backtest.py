@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Any, Dict, Optional, Tuple
 
-from Strategies.LI_2023_02_RsiSma import RsiSma
+from Strategies.CciStrategy import CciStrategy
 
 
 class Backtest:
@@ -91,45 +91,6 @@ class Backtest:
         # Compute drawdown
         running_max = np.maximum.accumulate(self.data["cumulative_returns"] + 1)
         self.data["drawdown"] = (self.data["cumulative_returns"] + 1) / running_max - 1
-
-    def display_graphs(self, title: Optional[str] = None) -> None:
-        self.get_vector_metrics()
-
-        cum_ret = self.data["cumulative_returns"]
-        drawdown = self.data["drawdown"]
-
-        plt.rc("font", weight="bold", size=12)
-        fig, (cum, dra) = plt.subplots(2, 1, figsize=(15, 7))
-        plt.setp(cum.spines.values(), color="#ffffff")
-        plt.setp(dra.spines.values(), color="#ffffff")
-
-        fig.suptitle(
-            title if title else "Overview of the Strategy", size=18, fontweight="bold"
-        )
-
-        cum.plot(cum_ret * 100, color="#569878", linewidth=1.5)
-        cum.fill_between(
-            cum_ret.index, cum_ret * 100, 0, cum_ret >= 0, color="#569878", alpha=0.30
-        )
-        cum.axhline(0, color="#569878")
-        cum.grid(axis="y", color="#505050", linestyle="--", linewidth=1, alpha=0.5)
-        cum.set_ylabel("Cumulative Return (%)", size=15, fontweight="bold")
-
-        dra.plot(
-            drawdown.index, drawdown * 100, color="#C04E4E", alpha=0.50, linewidth=0.5
-        )
-        dra.fill_between(
-            drawdown.index,
-            drawdown * 100,
-            0,
-            drawdown * 100 <= 0,
-            color="#C04E4E",
-            alpha=0.30,
-        )
-        dra.grid(axis="y", color="#505050", linestyle="--", linewidth=1, alpha=0.5)
-        dra.set_ylabel("Drawdown (%)", size=15, fontweight="bold")
-
-        plt.show()
 
     def display_metrics(self) -> None:
         self.get_vector_metrics()
@@ -221,6 +182,45 @@ class Backtest:
             "------------------------------------------------------------------------------------------------------------------"
         )
 
+    def display_graphs(self, title: Optional[str] = None) -> None:
+        self.get_vector_metrics()
+
+        cum_ret = self.data["cumulative_returns"]
+        drawdown = self.data["drawdown"]
+
+        plt.rc("font", weight="bold", size=12)
+        fig, (cum, dra) = plt.subplots(2, 1, figsize=(15, 7))
+        plt.setp(cum.spines.values(), color="#ffffff")
+        plt.setp(dra.spines.values(), color="#ffffff")
+
+        fig.suptitle(
+            title if title else "Overview of the Strategy", size=18, fontweight="bold"
+        )
+
+        cum.plot(cum_ret * 100, color="#569878", linewidth=1.5)
+        cum.fill_between(
+            cum_ret.index, cum_ret * 100, 0, cum_ret >= 0, color="#569878", alpha=0.30
+        )
+        cum.axhline(0, color="#569878")
+        cum.grid(axis="y", color="#505050", linestyle="--", linewidth=1, alpha=0.5)
+        cum.set_ylabel("Cumulative Return (%)", size=15, fontweight="bold")
+
+        dra.plot(
+            drawdown.index, drawdown * 100, color="#C04E4E", alpha=0.50, linewidth=0.5
+        )
+        dra.fill_between(
+            drawdown.index,
+            drawdown * 100,
+            0,
+            drawdown * 100 <= 0,
+            color="#C04E4E",
+            alpha=0.30,
+        )
+        dra.grid(axis="y", color="#505050", linestyle="--", linewidth=1, alpha=0.5)
+        dra.set_ylabel("Drawdown (%)", size=15, fontweight="bold")
+
+        plt.show()
+
     def get_ret_dd(self) -> Tuple[float, float]:
         self.get_vector_metrics()
         return_over_period = self.data["cumulative_returns"].iloc[-1] * 100
@@ -232,7 +232,7 @@ class Backtest:
         self.display_graphs(title)
 
 
-# # Example Usage
+# Example Usage
 #
 # data = pd.read_csv('../Data/FixTimeBars/ADANI_ready.csv',index_col="time",
 #     parse_dates=True,)
@@ -243,10 +243,28 @@ class Backtest:
 #     "sl": -0.01,
 #     "fast_sma": 50,
 #     "slow_sma": 20,
-#     "rsi": 25,
+#     "rsi": 14,
 #     "cost": 0.0001,
 #     "leverage": 5
 # }
 #
 # # Initialize and run the backtest
-# backtest = Backtest(data, RsiSma, parameters, run_directly=True, title="RSI SMA Strategy Backtest")
+# backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
+
+
+# # Load data
+# data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time", parse_dates=True)
+#
+# # Filter data to include only the most recent two years
+# recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
+#
+# # Define strategy parameters
+# parameters = {
+#   "cci_period": 20,  # Example value, adjust as needed
+#   "atr_period": 14,  # Example value, adjust as needed
+#   "atr_multiplier": 1.5,  # Example value, adjust as needed
+#   "cost": 10
+# }
+#
+# # Initialize and run the backtest
+# backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
