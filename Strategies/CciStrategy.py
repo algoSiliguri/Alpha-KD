@@ -47,7 +47,7 @@ class CciStrategy:
         :param time: TimeStamp of the row
         :return: Entry signal of the row and entry time
         """
-        # If we are in the first or second columns, we do nothing
+        # If there are fewer than 2 rows, we do nothing
         if len(self.data.loc[:time]) < 2:
             return 0, self.entry_time
 

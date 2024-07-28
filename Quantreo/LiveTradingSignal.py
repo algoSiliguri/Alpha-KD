@@ -11,6 +11,22 @@ def random(symbol):
     sell = not buy
     return buy, sell
 
+def CciStrategy(symbol, timeframe, cci_period, atr_period):
+    df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
+    df = cci(df, window=cci_period)
+    df = atr(df, window=atr_period)
+
+    # Determine entry signals
+    cci_current = df[f"CCI_{cci_period}"].iloc[-1]
+    cci_previous = df[f"CCI_{cci_period}"].iloc[-2]
+
+    buy_signal = cci_previous < -100 and cci_current > -100
+    sell_signal = cci_previous > 100 and cci_current < 100  # Example sell signal
+
+    current_price = df["close"].iloc[-1]
+    atr_value = df[f"ATR_{atr_period}"].iloc[-1]
+
+    return buy_signal, sell_signal, df, current_price, atr_value
 
 def li_2023_02_RsiSma(symbol, timeframe, fast_sma_period, slow_sma_period, rsi_period):
     df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
