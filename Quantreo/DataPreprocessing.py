@@ -159,7 +159,7 @@ def cci(df, window, constant=0.015, fillna=False):
         high=df["high"],
         low=df["low"],
         close=df["close"],
-        window=window,
+        window=int(window),
         constant=constant,
         fillna=fillna,
     )
@@ -180,7 +180,11 @@ def atr(df, window):
     """
     df = df.copy()  # Ensure we are working with a copy
     atr_indicator = ta.volatility.AverageTrueRange(
-        high=df["high"], low=df["low"], close=df["close"], window=window, fillna=False
+        high=df["high"],
+        low=df["low"],
+        close=df["close"],
+        window=int(window),
+        fillna=False,
     )
     df.loc[:, f"ATR_{window}"] = atr_indicator.average_true_range()
     return df
