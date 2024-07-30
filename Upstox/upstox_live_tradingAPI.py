@@ -1,4 +1,3 @@
-
 #### Import the upstock sdk
 # from upstox_api.api import Upstox, TransactionType, OrderType, ProductType, Exchange
 from datetime import datetime, timedelta
@@ -8,6 +7,7 @@ import numpy as np
 
 class UpstoxAPI:
     def __init__(self, api_key, access_token):
+        # //Need to connect to Upstox with access token
         self.upstox = Upstox(api_key, access_token)
         self.timeframes_mapping = {
             "1-minute": 1,
