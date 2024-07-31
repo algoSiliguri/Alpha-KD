@@ -188,3 +188,79 @@ def atr(df, window):
     )
     df.loc[:, f"ATR_{window}"] = atr_indicator.average_true_range()
     return df
+
+def trix(df, window, fillna=False):
+  """
+  Calculate the TRIX (Triple Exponential Average) and add it to the DataFrame.
+
+  Parameters:
+  df (pd.DataFrame): The DataFrame containing the price data.
+  window (int): The period over which to calculate the TRIX.
+  fillna (bool): If True, fill NaN values (default is False).
+
+  Returns:
+  pd.DataFrame: The DataFrame with the TRIX added as a new column.
+  """
+  df = df.copy()  # Ensure we are working with a copy
+  trix_indicator = ta.trend.TRIXIndicator(
+      close=df["close"],
+      window=int(window),
+      fillna=fillna,
+  )
+  df.loc[:, f"TRIX_{window}"] = trix_indicator.trix()
+  return df
+
+
+import pandas as pd
+
+def dpo(df, window, fillna=False):
+  """
+  Calculate the Detrended Price Oscillator (DPO) and add it to the DataFrame.
+
+  Parameters:
+  df (pd.DataFrame): The DataFrame containing the price data.
+  window (int): The period over which to calculate the DPO.
+  fillna (bool): If True, fill NaN values (default is False).
+
+  Returns:
+  pd.DataFrame: The DataFrame with the DPO added as a new column.
+  """
+  df = df.copy()  # Ensure we are working with a copy
+  sma = df['close'].rolling(window=window).mean()
+  shifted_sma = sma.shift(int(window / 2 + 1))
+  df.loc[:,f"DPO_{window}"] = df['close'] - shifted_sma
+
+  if fillna:
+      df[f"DPO_{window}"].fillna(0, inplace=True)
+
+  return df
+
+
+def double_ema(df, col, short_window, long_window, fillna=False):
+  """
+  Calculate the difference between two EMAs (short and long) and add it to the DataFrame.
+
+  Parameters:
+  df (pd.DataFrame): The DataFrame containing the price data.
+  col (str): The column name in the DataFrame for which the EMAs will be calculated.
+  short_window (int): The period for the short EMA.
+  long_window (int): The period for the long EMA.
+  fillna (bool): If True, fill NaN values (default is False).
+
+  Returns:
+  pd.DataFrame: The DataFrame with the EMA difference added as a new column.
+  """
+  df = df.copy()  # Ensure we are working with a copy
+
+  # Calculate the EMAs
+  df[f"EMA_{short_window}"] = ta.trend.EMAIndicator(df[col], int(short_window)).ema_indicator()
+  df[f"EMA_{long_window}"] = ta.trend.EMAIndicator(df[col], int(long_window)).ema_indicator()
+
+  # Calculate the difference between the short and long EMAs
+  df[f"EMA_diff_{short_window}_{long_window}"] = df[f"EMA_{short_window}"] - df[f"EMA_{long_window}"]
+
+  # Fill NaN values if specified
+  if fillna:
+      df[f"EMA_diff_{short_window}_{long_window}"].fillna(0, inplace=True)
+
+  return df

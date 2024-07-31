@@ -5,8 +5,10 @@ from tqdm import tqdm
 from typing import Any, Dict, Optional, Tuple
 
 from Strategies.CciStrategy import CciStrategy
+#from Strategies.trixstrategy import TrixStrategy
 
-
+#from Strategies.DoubleEmaStrategy import DoubleEmaStrategy
+from Strategies.DpoStrategy import DpoStrategy
 class Backtest:
     """
     A class for backtesting trading strategies.
@@ -252,7 +254,7 @@ class Backtest:
 # backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
 
 
-# # Load data
+# Load data
 # data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time", parse_dates=True)
 #
 # # Filter data to include only the most recent two years
@@ -267,4 +269,25 @@ class Backtest:
 # }
 #
 # # Initialize and run the backtest
-# backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
+# backtest = Backtest(recent_two_years, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
+
+
+
+#
+#
+# # Load data
+# data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIPORTS_Daily.csv', index_col="time", parse_dates=True)
+#
+# # Filter data to include only the most recent two years
+# recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
+#
+# # Define strategy parameters
+# parameters = {
+#   "dpo_period": 20,  # Example value, adjust as needed
+#   "atr_period": 14,  # Example value, adjust as needed
+#   "atr_multiplier": 1.5,  # Example value, adjust as needed
+#   "cost": 10
+# }
+#
+# # Initialize and run the backtest
+# backtest = Backtest(recent_two_years, DpoStrategy, parameters, run_directly=True, title="DEMA Strategy Backtest")
