@@ -3,12 +3,20 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
+import upstox_client
+from upstox_client.rest import ApiException
 
 
-class UpstoxAPI:
-    def __init__(self, api_key, access_token):
+class UpstoxAPILive:
+    def __init__(self, access_token):
         # //Need to connect to Upstox with access token
-        self.upstox = Upstox(api_key, access_token)
+        configuration = upstox_client.Configuration()
+        configuration.access_token = access_token
+        self.api_version = '2.0'
+        self.user_api_instance = upstox_client.UserApi(upstox_client.ApiClient(configuration))
+        self.portfolio_api_instance = upstox_client.PortfolioApi(upstox_client.ApiClient(configuration))
+        self.intraday_instance = upstox_client.HistoryApi(upstox_client.ApiClient(configuration))
+        self.order_instance = upstox_client.OrderApi(upstox_client.ApiClient(configuration))
         self.timeframes_mapping = {
             "1-minute": 1,
             "2-minutes": 2,
@@ -31,72 +39,77 @@ class UpstoxAPI:
         }
 
     def get_profile(self):
-        return self.upstox.get_profile()
+        try:
+            return self.user_api_instance.get_profile(self.api_version)
+        except Exception as e:
+            print(f"Error fetching profile: {e}")
+            return None
 
     def get_balance(self):
-        return self.upstox.get_balance()
+        try:
+            balance = self.user_api_instance.get_user_fund_margin(self.api_version, segment='SEC').to_dict()
+            return balance['data']['equity']['available_margin']
+        except Exception as e:
+            print(f"Error fetching balance: {e}")
+            return None
 
     def get_positions(self):
-        return self.upstox.get_positions()
+        try:
+            return self.portfolio_api_instance.get_positions(self.api_version)
+        except Exception as e:
+            print(f"Error fetching positions: {e}")
+            return None
 
     def place_order(
-        self, transaction_type, symbol, quantity, tp=None, sl=None, comment="", magic=0
-    ):
-        order = self.upstox.place_order(
-            transaction_type=transaction_type,
-            exchange=Exchange.NSE,
-            symbol=symbol,
-            quantity=quantity,
-            order_type=OrderType.Market,
-            product=ProductType.Delivery,
-        )
-        # TODO: Implement TP and SL logic if Upstox supports it
-        return order
+            self, transaction_type, symbol, quantity):
 
-    def get_verification_time(self, timeframe: int):
-        """
-        Generate a list of verification times based on the given timeframe in minutes.
+        body = upstox_client.PlaceOrderRequest(quantity, "D", "DAY", 0.0, "string", symbol,
+                                               "MARKET", transaction_type, 0,
+                                               0.0, False)
 
-        :param timeframe: Timeframe in minutes
-        :return: List of verification times
-        """
-        start_time = datetime(year=2021, month=1, day=1, hour=0, minute=0) - timedelta(
-            seconds=2
-        )
-        end_time = datetime(year=2021, month=1, day=1, hour=23, minute=59, second=59)
+        try:
+            api_response = self.order_instance.place_order(body, self.api_version)
+            print(api_response)
+        except ApiException as e:
+            print("Exception when calling OrderApi->place_order: %s\n" % e)
 
-        time_list = [start_time.strftime("%H:%M:%S")]
-        current_time = start_time
-        while current_time <= end_time:
-            current_time += timedelta(minutes=timeframe)
-            time_list.append(current_time.strftime("%H:%M:%S"))
-        del time_list[0]
-        del time_list[-1]
+    # def get_verification_time(self, timeframe: int):
+    #     """
+    #     Generate a list of verification times based on the given timeframe in minutes.
+    #
+    #     :param timeframe: Timeframe in minutes
+    #     :return: List of verification times
+    #     """
+    #     start_time = datetime(year=2021, month=1, day=1, hour=0, minute=0) - timedelta(
+    #         seconds=2
+    #     )
+    #     end_time = datetime(year=2021, month=1, day=1, hour=23, minute=59, second=59)
+    #
+    #     time_list = [start_time.strftime("%H:%M:%S")]
+    #     current_time = start_time
+    #     while current_time <= end_time:
+    #         current_time += timedelta(minutes=timeframe)
+    #         time_list.append(current_time.strftime("%H:%M:%S"))
+    #     del time_list[0]
+    #     del time_list[-1]
+    #
+    #     return time_list
 
-        return time_list
-
-    def get_rates(self, symbol, number_of_data=10000, timeframe="1-day"):
+    def get_rates(self, symbol, interval="30minute"):
         """
         Fetch historical data for a given symbol and timeframe.
 
         :param symbol: Trading symbol
-        :param number_of_data: Number of data points to fetch
-        :param timeframe: Timeframe for the data
+        :param interval: Timeframe for the data
         :return: DataFrame of historical data
         """
-        # TODO: Implement this function based on Upstox API capabilities
-        # Placeholder implementation
-        data = {
-            "time": pd.date_range(start="2021-01-01", periods=number_of_data, freq="D"),
-            "open": np.random.rand(number_of_data),
-            "high": np.random.rand(number_of_data),
-            "low": np.random.rand(number_of_data),
-            "close": np.random.rand(number_of_data),
-            "volume": np.random.randint(1, 1000, number_of_data),
-        }
-        df_rates = pd.DataFrame(data)
-        df_rates = df_rates.set_index("time")
-        return df_rates
+        try:
+            api_response = self.intraday_instance.get_intra_day_candle_data(symbol, interval,
+                                                                            self.api_version).to_dict()
+            return api_response['data']['candles']
+        except Exception as e:
+            print(f"Error fetching intra-day candle data: {e}")
+            return None
 
     def resume(self):
         """
@@ -106,15 +119,14 @@ class UpstoxAPI:
         """
         try:
             positions = self.get_positions()
-            columns_list = ["symbol", "quantity", "average_price", "last_price", "pnl"]
+            columns_list = ["trading_symbol", "quantity", "average_price", "last_price", "pnl"]
             summary = pd.DataFrame(positions, columns=columns_list)
             return summary
         except Exception as e:
             print(f"Error fetching open positions: {e}")
-            return pd.DataFrame()
 
     def run(
-        self, symbol, buy, sell, lot, pct_tp=0.02, pct_sl=0.01, comment="", magic=23400
+            self, symbol, buy, sell, lot, pct_tp=0.02, pct_sl=0.01, comment="", magic=23400
     ):
         """
         Execute the trading logic, including opening and closing positions.
@@ -151,29 +163,29 @@ class UpstoxAPI:
         if buy and position == 0:
             buy = False
         elif not buy and position == 0:
-            self.place_order(
-                TransactionType.Sell, symbol, lot, comment=comment, magic=magic
-            )
+            # self.place_order(
+            #     TransactionType.Sell, symbol, lot, comment=comment, magic=magic
+            # )
             print(f"CLOSE BUY POSITION")
 
         if sell and position == 1:
             sell = False
         elif not sell and position == 1:
-            self.place_order(
-                TransactionType.Buy, symbol, lot, comment=comment, magic=magic
-            )
+            # self.place_order(
+            #     TransactionType.Buy, symbol, lot, comment=comment, magic=magic
+            # )
             print(f"CLOSE SELL POSITION")
 
         if buy:
-            self.place_order(
-                TransactionType.Buy, symbol, lot, comment=comment, magic=magic
-            )
+            # self.place_order(
+            #     TransactionType.Buy, symbol, lot, comment=comment, magic=magic
+            # )
             print(f"OPEN BUY POSITION")
 
         if sell:
-            self.place_order(
-                TransactionType.Sell, symbol, lot, comment=comment, magic=magic
-            )
+            # self.place_order(
+            #     TransactionType.Sell, symbol, lot, comment=comment, magic=magic
+            # )
             print(f"OPEN SELL POSITION")
 
         print("------------------------------------------------------------------")
