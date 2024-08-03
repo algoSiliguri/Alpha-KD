@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
-from upstox_api import UpstoxAPI
 from data_processor import DataProcessor
 import pandas as pd
+from upstox_api import UpstoxAPIHistorical
 
 
 class HistoricalDataFetcher:
     """A class to fetch and process historical data from the Upstox API."""
 
     def __init__(self):
-        self.api_client = UpstoxAPI
+        self.api_client = UpstoxAPIHistorical
         self.data_processor = DataProcessor
 
     def get_rates(
