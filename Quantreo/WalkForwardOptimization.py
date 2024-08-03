@@ -297,7 +297,7 @@ class WalkForwardOptimization:
             self.BT.run()
 
             # Calculation and storage of the criterion (Return over period over the maximum drawdown)
-            ret, dd = self.BT.get_ret_dd()
+            ret, dd = self.BT.metrics_display.get_ret_dd()
 
             # We add ret and dd because dd < 0
             self.criterion = ret + 2 * dd

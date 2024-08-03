@@ -226,7 +226,7 @@ def dpo(df, window, fillna=False):
   pd.DataFrame: The DataFrame with the DPO added as a new column.
   """
   df = df.copy()  # Ensure we are working with a copy
-  sma = df['close'].rolling(window=window).mean()
+  sma = df['close'].rolling(window=int(window)).mean()
   shifted_sma = sma.shift(int(window / 2 + 1))
   df.loc[:,f"DPO_{window}"] = df['close'] - shifted_sma
 
