@@ -3,6 +3,20 @@ import pandas as pd
 
 
 class MetricsDisplay:
+    """
+    A class for calculating and displaying various trading metrics based on input data.
+
+    This class processes trading data to compute metrics such as average trade lifetime,
+    number of buy and sell trades, return over period, maximum drawdown, hit ratio,
+    risk-reward ratio, and monthly performance statistics.
+
+    Parameters
+    ----------
+    data : DataFrame
+       The historical data to backtest the trading strategy on. The DataFrame should be indexed by time
+       and contain at least the price data.
+    """
+
     def __init__(self, data):
         self.data = data
 
