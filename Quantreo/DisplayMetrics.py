@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 
@@ -6,9 +8,16 @@ class MetricsDisplay:
     """
     A class for calculating and displaying various trading metrics based on input data.
 
-    This class processes trading data to compute metrics such as average trade lifetime,
-    number of buy and sell trades, return over period, maximum drawdown, hit ratio,
-    risk-reward ratio, and monthly performance statistics.
+    This class processes trading data to compute metrics such as
+    Return (period),
+    Number of Buys,
+    Number of sells,
+    Average Trade Lifetime,
+    Maximum drawdown,
+    Profitable months,
+    Best month return,
+    Worse month return,
+    Average ret/month
 
     Parameters
     ----------
@@ -19,9 +28,31 @@ class MetricsDisplay:
 
     def __init__(self, data):
         self.data = data
+        self.return_over_period = self.calculate_return_over_period()
+        self.buy_count = self.get_buy_count()
+        self.sell_count = self.get_sell_count()
+        self.days, self.hours_left, self.minutes_left = self.calculate_average_trade_lifetime()
+        self.dd_max = self.get_dd_max()
+        self.hit = self.calculate_hit()
+        self.rr_ratio = self.calculate_rr_ratio()
+        self.ben_month = self.calculate_ben_month()
+        self.pct_winning_month = self.calculate_pct_winning_month()
+        self.best_month_return = self.get_best_month_return()
+        self.worse_month_return = self.get_worse_month_return()
+        self.cmgr = self.get_cmgr()
 
-    def display_metrics(self) -> None:
+        self.display_metrics()
 
+    def calculate_return_over_period(self):
+        return self.data["cumulative_returns"].iloc[-1] * 100
+
+    def get_buy_count(self):
+        return self.data["buy_count"].sum()
+
+    def get_sell_count(self):
+        return self.data["sell_count"].sum()
+
+    def calculate_average_trade_lifetime(self):
         try:
             seconds = self.data.loc[self.data["duration"] != 0]["duration"].mean()
             if pd.isna(seconds):
@@ -31,35 +62,41 @@ class MetricsDisplay:
             hours = minutes // 60
             hours_left = int(hours % 24)
             days = int(hours / 24)
+            return days, hours_left, minutes_left
         except Exception as e:
             print(f"Error calculating average trade lifetime: {e}")
             minutes_left = 0
             hours_left = 0
             days = 0
 
-        buy_count = self.data["buy_count"].sum()
-        sell_count = self.data["sell_count"].sum()
-        return_over_period = self.data["cumulative_returns"].iloc[-1] * 100
-        dd_max = -self.data["drawdown"].min() * 100
+    # def get_ret_dd(self) -> Tuple[float, float]:
+    #     return_over_period = self.data["cumulative_returns"].iloc[-1] * 100
+    #     dd_max = self.data["drawdown"].min() * 100
+    #     return return_over_period, dd_max
+    def get_dd_max(self):
+        return -self.data["drawdown"].min() * 100
 
+    def calculate_hit(self):
         nb_trade_positive = len(self.data.loc[self.data["returns"] > 0])
         nb_trade_negative = len(self.data.loc[self.data["returns"] < 0])
-        hit = (
+        return (
             nb_trade_positive * 100 / (nb_trade_positive + nb_trade_negative)
             if (nb_trade_positive + nb_trade_negative) > 0
             else 0
         )
 
+    def calculate_rr_ratio(self):
         average_winning_value = self.data.loc[self.data["returns"] > 0][
             "returns"
         ].mean()
         average_losing_value = self.data.loc[self.data["returns"] < 0]["returns"].mean()
-        rr_ratio = (
+        return (
             -average_winning_value / average_losing_value
             if average_losing_value != 0
             else np.nan
         )
 
+    def calculate_ben_month(self):
         months = [f"{i:02d}" for i in range(1, 13)]
         years = [
             str(year)
@@ -77,33 +114,43 @@ class MetricsDisplay:
                     ben_month.append(cum)
                 except KeyError:
                     pass
+        return ben_month
 
-        sr = pd.Series(ben_month, name="returns")
-        pct_winning_month = (
+    def calculate_pct_winning_month(self):
+        sr = pd.Series(self.ben_month, name="returns")
+        return (
             (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
         )
-        best_month_return = np.max(ben_month) * 100 if ben_month else 0
-        worse_month_return = np.min(ben_month) * 100 if ben_month else 0
-        cmgr = np.mean(ben_month) * 100 if ben_month else 0
+
+    def get_best_month_return(self):
+        return np.max(self.ben_month) * 100 if self.ben_month else 0
+
+    def get_worse_month_return(self):
+        return np.min(self.ben_month) * 100 if self.ben_month else 0
+
+    def get_cmgr(self):
+        return np.mean(self.ben_month) * 100 if self.ben_month else 0
+
+    def display_metrics(self) -> None:
 
         print(
             "------------------------------------------------------------------------------------------------------------------"
         )
         print(
-            f" AVERAGE TRADE LIFETIME: {days}D  {hours_left}H  {minutes_left}M \t Nb BUY: {buy_count} \t Nb SELL: {sell_count} "
+            f" AVERAGE TRADE LIFETIME: {self.days}D  {self.hours_left}H  {self.minutes_left}M \t Nb BUY: {self.buy_count} \t Nb SELL: {self.sell_count}"
         )
         print(
             "                                                                                                                  "
         )
         print(
-            f" Return (period): {'%.2f' % return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % dd_max}%"
+            f" Return (period): {'%.2f' % self.return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % self.dd_max}%"
         )
-        print(f" HIT ratio: {'%.2f' % hit}% \t\t\t\t\t\t R ratio: {'%.2f' % rr_ratio}")
+        print(f" HIT ratio: {'%.2f' % self.hit}% \t\t\t\t\t\t R ratio: {'%.2f' % self.rr_ratio}")
         print(
-            f" Best month return: {'%.2f' % best_month_return}% \t\t\t\t Worse month return: {'%.2f' % worse_month_return}%"
+            f" Best month return: {'%.2f' % self.best_month_return}% \t\t\t\t Worse month return: {'%.2f' % self.worse_month_return}%"
         )
         print(
-            f" Average ret/month: {'%.2f' % cmgr}% \t\t\t\t Profitable months: {'%.2f' % pct_winning_month}%"
+            f" Average ret/month: {'%.2f' % self.cmgr}% \t\t\t\t Profitable months: {'%.2f' % self.pct_winning_month}%"
         )
         print(
             "------------------------------------------------------------------------------------------------------------------"

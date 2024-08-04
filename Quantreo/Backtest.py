@@ -63,7 +63,7 @@ class Backtest:
             self.run()
             self.get_vector_metrics()
             self.metric_display = MetricsDisplay(self.data)
-            self.display(title)
+            self.display_graphs(title)
 
     def run(self) -> None:
         for current_time in tqdm(self.data.index, desc="Running Backtest"):
@@ -131,16 +131,6 @@ class Backtest:
         dra.set_ylabel("Drawdown (%)", size=15, fontweight="bold")
 
         plt.show()
-
-    def get_ret_dd(self) -> Tuple[float, float]:
-        self.get_vector_metrics()
-        return_over_period = self.data["cumulative_returns"].iloc[-1] * 100
-        dd_max = self.data["drawdown"].min() * 100
-        return return_over_period, dd_max
-
-    def display(self, title: Optional[str] = None) -> None:
-        self.metric_display.display_metrics()
-        self.display_graphs(title)
 
 
 # Example Usage
