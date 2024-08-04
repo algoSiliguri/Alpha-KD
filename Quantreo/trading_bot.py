@@ -32,6 +32,8 @@ class TradingBot:
       This method fetches the user profile and account balance from the Upstox API
       and prints them to the console.
       """
+      # get auth token from upstox
+
       try:
           profile = self.api.get_profile()
           print("------------------------------------------------------------------")
