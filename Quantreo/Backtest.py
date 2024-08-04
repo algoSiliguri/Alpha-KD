@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Any, Dict, Optional, Tuple
 
+from Quantreo.DisplayMetrics import MetricsDisplay
 from Strategies.CciStrategy import CciStrategy
 
 
@@ -37,18 +38,18 @@ class Backtest:
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        TradingStrategy: Any,
-        parameters: Dict[str, Any],
-        run_directly: bool = False,
-        title: Optional[str] = None,
+            self,
+            data: pd.DataFrame,
+            TradingStrategy: Any,
+            parameters: Dict[str, Any],
+            run_directly: bool = False,
+            title: Optional[str] = None,
     ):
         self.TradingStrategy = TradingStrategy(data, parameters)
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
         self.data = data.loc[
-            self.start_date_backtest :
-        ].copy()  # Use .copy() to avoid SettingWithCopyWarning
+                    self.start_date_backtest:
+                    ].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Initialize columns if they don't exist
         for col in ["returns", "duration", "buy_count", "sell_count"]:
@@ -60,8 +61,9 @@ class Backtest:
 
         if run_directly:
             self.run()
-            self.display_metrics()
-            self.display_graphs(title)
+            self.get_vector_metrics()
+            self.metric_display = MetricsDisplay(self.data)
+            self.display(title)
 
     def run(self) -> None:
         for current_time in tqdm(self.data.index, desc="Running Backtest"):
@@ -81,7 +83,7 @@ class Backtest:
             if position_return != 0:
                 self.data.loc[current_time, "returns"] = position_return
                 self.data.loc[current_time, "duration"] = (
-                    self.exit_trade_time - self.entry_trade_time
+                        self.exit_trade_time - self.entry_trade_time
                 ).total_seconds()
 
     def get_vector_metrics(self) -> None:
@@ -92,98 +94,7 @@ class Backtest:
         running_max = np.maximum.accumulate(self.data["cumulative_returns"] + 1)
         self.data["drawdown"] = (self.data["cumulative_returns"] + 1) / running_max - 1
 
-    def display_metrics(self) -> None:
-        self.get_vector_metrics()
-
-        try:
-            seconds = self.data.loc[self.data["duration"] != 0]["duration"].mean()
-            if pd.isna(seconds):
-                raise ValueError("No trades executed.")
-            minutes = seconds // 60
-            minutes_left = int(minutes % 60)
-            hours = minutes // 60
-            hours_left = int(hours % 24)
-            days = int(hours / 24)
-        except Exception as e:
-            print(f"Error calculating average trade lifetime: {e}")
-            minutes_left = 0
-            hours_left = 0
-            days = 0
-
-        buy_count = self.data["buy_count"].sum()
-        sell_count = self.data["sell_count"].sum()
-        return_over_period = self.data["cumulative_returns"].iloc[-1] * 100
-        dd_max = -self.data["drawdown"].min() * 100
-
-        nb_trade_positive = len(self.data.loc[self.data["returns"] > 0])
-        nb_trade_negative = len(self.data.loc[self.data["returns"] < 0])
-        hit = (
-            nb_trade_positive * 100 / (nb_trade_positive + nb_trade_negative)
-            if (nb_trade_positive + nb_trade_negative) > 0
-            else 0
-        )
-
-        average_winning_value = self.data.loc[self.data["returns"] > 0][
-            "returns"
-        ].mean()
-        average_losing_value = self.data.loc[self.data["returns"] < 0]["returns"].mean()
-        rr_ratio = (
-            -average_winning_value / average_losing_value
-            if average_losing_value != 0
-            else np.nan
-        )
-
-        months = [f"{i:02d}" for i in range(1, 13)]
-        years = [
-            str(year)
-            for year in range(
-                self.data.index.year.min(), self.data.index.year.max() + 1
-            )
-        ]
-
-        ben_month = []
-        for month in months:
-            for year in years:
-                try:
-                    information = self.data.loc[f"{year}-{month}"]
-                    cum = information["returns"].sum()
-                    ben_month.append(cum)
-                except KeyError:
-                    pass
-
-        sr = pd.Series(ben_month, name="returns")
-        pct_winning_month = (
-            (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
-        )
-        best_month_return = np.max(ben_month) * 100 if ben_month else 0
-        worse_month_return = np.min(ben_month) * 100 if ben_month else 0
-        cmgr = np.mean(ben_month) * 100 if ben_month else 0
-
-        print(
-            "------------------------------------------------------------------------------------------------------------------"
-        )
-        print(
-            f" AVERAGE TRADE LIFETIME: {days}D  {hours_left}H  {minutes_left}M \t Nb BUY: {buy_count} \t Nb SELL: {sell_count} "
-        )
-        print(
-            "                                                                                                                  "
-        )
-        print(
-            f" Return (period): {'%.2f' % return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % dd_max}%"
-        )
-        print(f" HIT ratio: {'%.2f' % hit}% \t\t\t\t\t\t R ratio: {'%.2f' % rr_ratio}")
-        print(
-            f" Best month return: {'%.2f' % best_month_return}% \t\t\t\t Worse month return: {'%.2f' % worse_month_return}%"
-        )
-        print(
-            f" Average ret/month: {'%.2f' % cmgr}% \t\t\t\t Profitable months: {'%.2f' % pct_winning_month}%"
-        )
-        print(
-            "------------------------------------------------------------------------------------------------------------------"
-        )
-
     def display_graphs(self, title: Optional[str] = None) -> None:
-        self.get_vector_metrics()
 
         cum_ret = self.data["cumulative_returns"]
         drawdown = self.data["drawdown"]
@@ -228,7 +139,7 @@ class Backtest:
         return return_over_period, dd_max
 
     def display(self, title: Optional[str] = None) -> None:
-        self.display_metrics()
+        self.metric_display.display_metrics()
         self.display_graphs(title)
 
 
@@ -252,18 +163,19 @@ class Backtest:
 # backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
 
 
-# # Load data
-# data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time", parse_dates=True)
+# Load data
+# data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time",
+#                    parse_dates=True)
 #
 # # Filter data to include only the most recent two years
 # recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
 #
 # # Define strategy parameters
 # parameters = {
-#   "cci_period": 20,  # Example value, adjust as needed
-#   "atr_period": 14,  # Example value, adjust as needed
-#   "atr_multiplier": 1.5,  # Example value, adjust as needed
-#   "cost": 10
+#     "cci_period": 20,  # Example value, adjust as needed
+#     "atr_period": 14,  # Example value, adjust as needed
+#     "atr_multiplier": 1.5,  # Example value, adjust as needed
+#     "cost": 10
 # }
 #
 # # Initialize and run the backtest
