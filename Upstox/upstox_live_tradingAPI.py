@@ -97,7 +97,7 @@ class UpstoxAPILive:
 
     def get_rates(self, symbol, interval="30minute"):
         """
-        Fetch historical data for a given symbol and timeframe.
+        Fetch live intraday data for a given symbol and timeframe.
 
         :param symbol: Trading symbol
         :param interval: Timeframe for the data
