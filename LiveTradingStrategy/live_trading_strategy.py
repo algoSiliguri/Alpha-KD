@@ -47,14 +47,16 @@ class TradingStrategy:
           if i < 3:
               return False  # Do not generate any buy/sell signal for the first 2 hours
 
-          if i == 3:
-              first_2_hours_above_vwap = all(self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j] for j in range(4))
-              if first_2_hours_above_vwap:
-                  return True
+          else:
 
-          if self.data["Close"].iloc[i - 1] < self.data["VWAP"].iloc[i - 1] and self.data["Close"].iloc[i] >= self.data["VWAP"].iloc[i]:
-              return True
-
+              if i == 3:
+                  first_2_hours_above_vwap = all(self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j] for j in range(3))
+                  if first_2_hours_above_vwap:
+                      return True
+              else:
+                  if self.data["Close"].iloc[i - 1] < self.data["VWAP"].iloc[i - 1] and self.data["Close"].iloc[i] >= \
+                          self.data["VWAP"].iloc[i]:
+                      return True
           return False
       except Exception as e:
           print(f"Error checking gap up: {e}")
