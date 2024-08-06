@@ -43,6 +43,9 @@ class MetricsDisplay:
         self.avg_win, self.avg_loss, self.win_prob = self.calculate_avg_win_loss()
         self.trades = self.buy_count + self.sell_count
         self.risk_of_ruin = self.calculate_risk_of_ruin(10000, self.trades, self.win_prob, self.avg_win, self.avg_loss)
+        self.sharpe_ratio = self.calculate_sharpe_ratio()
+        self.max_winning_streak, self.max_losing_streak = MetricsDisplay.calculate_streaks(self.data['returns'])
+
         self.display_metrics()
         # self.plot_risk_of_ruin(10000)
 
@@ -121,12 +124,58 @@ class MetricsDisplay:
             (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
         )
 
+    def calculate_sharpe_ratio(self):
+        # Assuming 252 trading days in a year
+        trading_days = 252
+
+        # Annual risk-free rate
+        annual_risk_free_rate = 0.0706  # Example rate, adjust as needed
+        daily_risk_free_rate = (1 + annual_risk_free_rate) ** (1 / trading_days) - 1
+
+        # Calculate daily excess returns
+        excess_returns = self.data["returns"] - daily_risk_free_rate
+
+        # Calculate annualized return
+        annualized_return = np.mean(self.data["returns"]) * trading_days
+
+        # Calculate annualized standard deviation of excess returns
+        annualized_std_excess_return = np.std(excess_returns, ddof=1) * np.sqrt(trading_days)
+
+        # Calculate annualized Sharpe ratio
+        sharpe_ratio = (annualized_return - annual_risk_free_rate) / annualized_std_excess_return
+
+        return sharpe_ratio
+
     def calculate_avg_win_loss(self):
         sr = pd.Series(self.ben_month, name="returns")
         avg_win = sr[sr > 0].mean() if len(sr[sr > 0]) > 0 else 0
         avg_loss = abs(sr[sr <= 0].mean()) if len(sr[sr <= 0]) > 0 else 0
         win_prob = len(sr[sr > 0]) / len(sr) if len(sr) > 0 else 0
         return avg_win, avg_loss, win_prob
+
+    @staticmethod
+    def calculate_streaks(returns):
+        max_winning_streak = 0
+        max_losing_streak = 0
+        current_winning_streak = 0
+        current_losing_streak = 0
+
+        for return_value in returns:
+            if return_value > 0:
+                current_winning_streak += 1
+                if current_winning_streak > max_winning_streak:
+                    max_winning_streak = current_winning_streak
+                current_losing_streak = 0
+            elif return_value < 0:
+                current_losing_streak += 1
+                if current_losing_streak > max_losing_streak:
+                    max_losing_streak = current_losing_streak
+                current_winning_streak = 0
+            else:
+                current_winning_streak = 0
+                current_losing_streak = 0
+
+        return max_winning_streak, max_losing_streak
 
     def get_best_month_return(self):
         return np.max(self.ben_month) * 100 if self.ben_month else 0
@@ -201,6 +250,8 @@ class MetricsDisplay:
         print(
             f" Average ret/month: {'%.2f' % self.cmgr}% \t\t\t\t Profitable months: {'%.2f' % self.pct_winning_month}%"
         )
+        print(
+            f" Sharpe Ratio: {'%.2f' % self.sharpe_ratio} \t\t\t\t\t Streaks: {self.max_winning_streak, self.max_losing_streak}")
         print(
             "------------------------------------------------------------------------------------------------------------------"
         )
