@@ -1,5 +1,5 @@
 from typing import Tuple
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -40,8 +40,11 @@ class MetricsDisplay:
         self.best_month_return = self.get_best_month_return()
         self.worse_month_return = self.get_worse_month_return()
         self.cmgr = self.get_cmgr()
-
+        self.avg_win, self.avg_loss, self.win_prob = self.calculate_avg_win_loss()
+        self.trades = self.buy_count + self.sell_count
+        self.risk_of_ruin = self.calculate_risk_of_ruin(10000, self.trades, self.win_prob, self.avg_win, self.avg_loss)
         self.display_metrics()
+        # self.plot_risk_of_ruin(10000)
 
     def calculate_return_over_period(self):
         return self.data["cumulative_returns"].iloc[-1] * 100
@@ -69,10 +72,6 @@ class MetricsDisplay:
             hours_left = 0
             days = 0
 
-    # def get_ret_dd(self) -> Tuple[float, float]:
-    #     return_over_period = self.data["cumulative_returns"].iloc[-1] * 100
-    #     dd_max = self.data["drawdown"].min() * 100
-    #     return return_over_period, dd_max
     def get_dd_max(self):
         return -self.data["drawdown"].min() * 100
 
@@ -122,6 +121,13 @@ class MetricsDisplay:
             (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
         )
 
+    def calculate_avg_win_loss(self):
+        sr = pd.Series(self.ben_month, name="returns")
+        avg_win = sr[sr > 0].mean() if len(sr[sr > 0]) > 0 else 0
+        avg_loss = abs(sr[sr <= 0].mean()) if len(sr[sr <= 0]) > 0 else 0
+        win_prob = len(sr[sr > 0]) / len(sr) if len(sr) > 0 else 0
+        return avg_win, avg_loss, win_prob
+
     def get_best_month_return(self):
         return np.max(self.ben_month) * 100 if self.ben_month else 0
 
@@ -130,6 +136,49 @@ class MetricsDisplay:
 
     def get_cmgr(self):
         return np.mean(self.ben_month) * 100 if self.ben_month else 0
+
+    def simulate_trade(self, win_prob, avg_win, avg_loss):
+        if np.random.rand() < win_prob:
+            return avg_win
+        else:
+            return -avg_loss
+
+    def simulate_trading_strategy(self, initial_capital, trades, win_prob, avg_win, avg_loss):
+        capital = initial_capital
+        capital_history = [capital]
+        for _ in range(trades):
+            capital += self.simulate_trade(win_prob, avg_win, avg_loss)
+            capital_history.append(capital)
+        return capital_history
+
+    def calculate_risk_of_ruin(self, initial_capital, trades, win_prob, avg_win, avg_loss, simulations=100):
+        ruin_count = 0
+        for _ in range(simulations):
+            capital_history = self.simulate_trading_strategy(initial_capital, trades, win_prob, avg_win, avg_loss)
+            if min(capital_history) <= 0:
+                ruin_count += 1
+        return ruin_count / simulations
+
+    # def plot_risk_of_ruin(self, initial_capital):
+    #     initial_capital = initial_capital
+    #     avg_win = self.avg_win
+    #     avg_loss = self.avg_loss
+    #     trades = self.trades
+    #
+    #     risk_of_ruins = []
+    #     steps = range(30, 60)
+    #     for step in steps:
+    #         win_probability = step / 100
+    #         risk_of_ruin = self.calculate_risk_of_ruin(initial_capital, trades, win_probability, avg_win, avg_loss)
+    #         risk_of_ruins.append(risk_of_ruin)
+    #
+    #     plt.figure(figsize=(10, 6))
+    #     plt.plot(steps, risk_of_ruins, label='Risk of ruin')
+    #     plt.xlabel('Probability of a winning trade')
+    #     plt.ylabel('Risk of ruin')
+    #     plt.title('Risk of Ruin vs Win Probability')
+    #     plt.grid(True)
+    #     plt.show()
 
     def display_metrics(self) -> None:
 
