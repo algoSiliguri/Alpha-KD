@@ -34,9 +34,7 @@ class HistoricalDataFetcher:
             start_date = (datetime.now() - timedelta(days=180)).strftime("%Y-%m-%d")
         elif interval in ["day", "week", "month"]:
             # For day, week, and month intervals, data is available for the preceding 20 years
-            start_date = (datetime.now() - timedelta(days=365 * 20)).strftime(
-                "%Y-%m-%d"
-            )
+            start_date = datetime(2002, 1, 1).strftime("%Y-%m-%d")
         else:
             raise ValueError(
                 "Invalid interval. Choose from '1minute', '30minute', 'day', 'week', 'month'."
