@@ -2,7 +2,7 @@ import requests
 from typing import List, Dict, Any
 
 
-class UpstoxAPI:
+class UpstoxAPIHistorical:
     """A class to interact with the Upstox API for fetching historical data."""
 
     BASE_URL = "https://api.upstox.com/v2"
@@ -27,7 +27,7 @@ class UpstoxAPI:
             requests.exceptions.RequestException: If the API request fails.
             ValueError: If the API response indicates a failure.
         """
-        url = f"{UpstoxAPI.BASE_URL}/historical-candle/{symbol}/{interval}/{end_date}/{start_date}"
+        url = f"{UpstoxAPIHistorical.BASE_URL}/historical-candle/{symbol}/{interval}/{end_date}/{start_date}"
         headers = {"Accept": "application/json"}
         response = requests.get(url, headers=headers)
 

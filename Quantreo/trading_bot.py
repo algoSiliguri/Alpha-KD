@@ -1,9 +1,10 @@
 from datetime import datetime
 import time
 import pandas as pd
+from IntradayDataAppender import IntradayDataAppender
 
 class TradingBot:
-  def __init__(self, api, strategy, verifier, symbol, lot, timeframe, pct_tp, pct_sl):
+  def __init__(self, api, strategy, verifier, symbol, lot, timeframe, pct_tp, pct_sl, prev_close):
       """
       Initialize the TradingBot with the necessary components and trading parameters.
 
@@ -25,6 +26,11 @@ class TradingBot:
       self.pct_tp = pct_tp
       self.pct_sl = pct_sl
 
+      # Adding fucntionality to add intraday 30 min data
+      self.intraday_data_appender = IntradayDataAppender(api)
+      #write logic for previous close
+      self.prev_close = prev_close
+
   def initialize(self):
       """
       Initialize the Upstox API and print account information.
@@ -32,6 +38,8 @@ class TradingBot:
       This method fetches the user profile and account balance from the Upstox API
       and prints them to the console.
       """
+      # get auth token from upstox
+
       try:
           profile = self.api.get_profile()
           print("------------------------------------------------------------------")
@@ -91,9 +99,14 @@ class TradingBot:
               current_time = datetime.now().strftime("%H:%M:%S")
               if current_time in timeframe_condition:
                   print(f"Current time: {current_time}")
-                  buy, sell = self.strategy.create_signals(self.symbol, self.timeframe)
-                  self.run(buy, sell)
-                  time.sleep(1)
+                  try:
+                      self.intraday_data_appender.append_data_to_dataframe(self.symbol)
+                      df_intraday_30min = self.intraday_data_appender.get_dataframe()
+                      buy, sell = self.strategy.create_signals(df_intraday_30min)
+                      self.run(buy, sell)
+                      time.sleep(1)
+                  except Exception as e:
+                      print(f"Error in main execution: {e}")
           except Exception as e:
               print(f"Error in trading loop: {e}")
               time.sleep(1)  # Sleep for a bit before retrying
