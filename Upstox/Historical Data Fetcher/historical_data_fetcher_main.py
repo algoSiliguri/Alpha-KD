@@ -59,7 +59,7 @@ def historical_data_fetcher_main():
         "BPCL",
         "DIVISLAB",
         "LTIM",
-        "NIFTYBEES"
+        "NIFTYBEES",
     ]
 
     try:
