@@ -47,11 +47,13 @@ class Backtest:
     ):
         self.TradingStrategy = TradingStrategy(data, parameters)
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
+
         self.data = data.loc[
                     self.start_date_backtest:
                     ].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Initialize columns if they don't exist
+        # time,open,high,low,close,volume,open_interest
         for col in ["returns", "duration", "buy_count", "sell_count"]:
             if col not in self.data.columns:
                 self.data[col] = 0
@@ -59,10 +61,11 @@ class Backtest:
         self.count_buy, self.count_sell = 0, 0
         self.entry_trade_time, self.exit_trade_time = None, None
 
+
         if run_directly:
             self.run()
             self.get_vector_metrics()
-            self.metric_display = MetricsDisplay(self.data)
+            # self.metric_display = MetricsDisplay(self.data)
             self.display_graphs(title)
 
     def run(self) -> None:
@@ -71,6 +74,7 @@ class Backtest:
             entry_signal, self.entry_trade_time = self.TradingStrategy.get_entry_signal(
                 current_time
             )
+            # We need to call the trades func in display metric and calculate avg_win/avg_loss, as the signal is generated.
             self.data.loc[current_time, "buy_count"] = 1 if entry_signal == 1 else 0
             self.data.loc[current_time, "sell_count"] = 1 if entry_signal == -1 else 0
 
@@ -80,11 +84,16 @@ class Backtest:
             )
 
             # Store position return and duration when we close a trade
+
+            #  We need returns as well
             if position_return != 0:
                 self.data.loc[current_time, "returns"] = position_return
                 self.data.loc[current_time, "duration"] = (
                         self.exit_trade_time - self.entry_trade_time
                 ).total_seconds()
+                print(position_return)
+
+                # MetricsDisplay.risk_of_ruin_params(position_return)
 
     def get_vector_metrics(self) -> None:
         # Compute Cumulative Returns
@@ -154,19 +163,19 @@ class Backtest:
 
 
 # Load data
-# data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time",
-#                    parse_dates=True)
+data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time",
+                   parse_dates=True)
+
+# Filter data to include only the most recent two years
+recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
+
+# Define strategy parameters
+parameters = {
+    "cci_period": 20,  # Example value, adjust as needed
+    "atr_period": 14,  # Example value, adjust as needed
+    "atr_multiplier": 1.5,  # Example value, adjust as needed
+    "cost": 10
+}
 #
-# # Filter data to include only the most recent two years
-# recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
-#
-# # Define strategy parameters
-# parameters = {
-#     "cci_period": 20,  # Example value, adjust as needed
-#     "atr_period": 14,  # Example value, adjust as needed
-#     "atr_multiplier": 1.5,  # Example value, adjust as needed
-#     "cost": 10
-# }
-#
-# # Initialize and run the backtest
-# backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
+# Initialize and run the backtest
+backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")

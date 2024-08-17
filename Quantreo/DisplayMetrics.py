@@ -28,6 +28,7 @@ class MetricsDisplay:
 
     def __init__(self, data):
         self.data = data
+        # print(self.data)
         self.return_over_period = self.calculate_return_over_period()
         self.buy_count = self.get_buy_count()
         self.sell_count = self.get_sell_count()
@@ -40,11 +41,17 @@ class MetricsDisplay:
         self.best_month_return = self.get_best_month_return()
         self.worse_month_return = self.get_worse_month_return()
         self.cmgr = self.get_cmgr()
+        self.max_winning_streak, self.max_losing_streak = MetricsDisplay.calculate_streaks(self.data['returns'])
+        self.sharpe_ratio = self.calculate_sharpe_ratio()
+
+        # inital capital = 10000
+        # trades = 0 (buy,sell signal generated from the strategy)
+        # as the number of trades increase we need to calculate avg_win, avg_loss
+        # based on avg_win we need to calculate win_prob
+        # Number of simulations (hit and trial) as these are no. of iterations
         self.avg_win, self.avg_loss, self.win_prob = self.calculate_avg_win_loss()
         self.trades = self.buy_count + self.sell_count
         self.risk_of_ruin = self.calculate_risk_of_ruin(10000, self.trades, self.win_prob, self.avg_win, self.avg_loss)
-        self.sharpe_ratio = self.calculate_sharpe_ratio()
-        self.max_winning_streak, self.max_losing_streak = MetricsDisplay.calculate_streaks(self.data['returns'])
 
         self.display_metrics()
         # self.plot_risk_of_ruin(10000)
@@ -146,13 +153,6 @@ class MetricsDisplay:
 
         return sharpe_ratio
 
-    def calculate_avg_win_loss(self):
-        sr = pd.Series(self.ben_month, name="returns")
-        avg_win = sr[sr > 0].mean() if len(sr[sr > 0]) > 0 else 0
-        avg_loss = abs(sr[sr <= 0].mean()) if len(sr[sr <= 0]) > 0 else 0
-        win_prob = len(sr[sr > 0]) / len(sr) if len(sr) > 0 else 0
-        return avg_win, avg_loss, win_prob
-
     @staticmethod
     def calculate_streaks(returns):
         max_winning_streak = 0
@@ -186,6 +186,18 @@ class MetricsDisplay:
     def get_cmgr(self):
         return np.mean(self.ben_month) * 100 if self.ben_month else 0
 
+    def risk_of_ruin_params(self, returns):
+        print(returns)
+            # Calculate avg_win & avg_loss before taking another trade
+
+
+
+    def calculate_avg_win_loss(self):
+        sr = pd.Series(self.ben_month, name="returns")
+        avg_win = sr[sr > 0].mean() if len(sr[sr > 0]) > 0 else 0
+        avg_loss = abs(sr[sr <= 0].mean()) if len(sr[sr <= 0]) > 0 else 0
+        win_prob = len(sr[sr > 0]) / len(sr) if len(sr) > 0 else 0
+        return avg_win, avg_loss, win_prob
     def simulate_trade(self, win_prob, avg_win, avg_loss):
         if np.random.rand() < win_prob:
             return avg_win
