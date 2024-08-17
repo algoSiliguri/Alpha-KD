@@ -80,19 +80,28 @@ class UpstoxAPILive:
     #     :param timeframe: Timeframe in minutes
     #     :return: List of verification times
     #     """
-    #     start_time = datetime(year=2021, month=1, day=1, hour=0, minute=0) - timedelta(
-    #         seconds=2
-    #     )
+    #     # Initialize the start time to just before midnight on January 1, 2021
+    #     start_time = datetime(year=2021, month=1, day=1, hour=0, minute=0) - timedelta(seconds=2)
+    #
+    #     # Set the end time to just before midnight on January 1, 2021
     #     end_time = datetime(year=2021, month=1, day=1, hour=23, minute=59, second=59)
     #
+    #     # Initialize the list of verification times with the start time
     #     time_list = [start_time.strftime("%H:%M:%S")]
+    #
+    #     # Set the current time to the start time
     #     current_time = start_time
+    #
+    #     # Loop to generate verification times at intervals of the given timeframe
     #     while current_time <= end_time:
     #         current_time += timedelta(minutes=timeframe)
     #         time_list.append(current_time.strftime("%H:%M:%S"))
+    #
+    #     # Remove the first and last elements from the list
     #     del time_list[0]
     #     del time_list[-1]
     #
+    #     # Return the list of verification times
     #     return time_list
 
     def get_rates(self, symbol, interval="30minute"):
@@ -126,7 +135,7 @@ class UpstoxAPILive:
             print(f"Error fetching open positions: {e}")
 
     def run(
-            self, symbol, buy, sell, lot, pct_tp=0.02, pct_sl=0.01, comment="", magic=23400
+            self, symbol, buy, sell, lot
     ):
         """
         Execute the trading logic, including opening and closing positions.
@@ -145,21 +154,25 @@ class UpstoxAPILive:
             "Date: ", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "\tSYMBOL:", symbol
         )
 
+        # Retrieve current open positions
         orders = self.resume()
         print(f"BUY: {buy} \t  SELL: {sell}")
 
         position = None
         identifier = None
 
+        # Check if there are any open positions for the given symbol
         if not orders.empty:
             position_list = orders.loc[orders["symbol"] == symbol]
             if not position_list.empty:
                 position = position_list.iloc[0]["quantity"]
                 identifier = position_list.iloc[0]["symbol"]
 
+        # Print the current position and identifier if available
         if position is not None:
             print(f"POSITION: {position} \t ID: {identifier}")
 
+        # Logic to close buy position if buy signal is true and no position is open
         if buy and position == 0:
             buy = False
         elif not buy and position == 0:
@@ -168,6 +181,7 @@ class UpstoxAPILive:
             # )
             print(f"CLOSE BUY POSITION")
 
+        # Logic to close sell position if sell signal is true and a position is open
         if sell and position == 1:
             sell = False
         elif not sell and position == 1:
@@ -176,16 +190,20 @@ class UpstoxAPILive:
             # )
             print(f"CLOSE SELL POSITION")
 
+        # Logic to open buy position if buy signal is true
         if buy:
             # self.place_order(
             #     TransactionType.Buy, symbol, lot, comment=comment, magic=magic
             # )
             print(f"OPEN BUY POSITION")
 
+        # Logic to open sell position if sell signal is true
         if sell:
             # self.place_order(
             #     TransactionType.Sell, symbol, lot, comment=comment, magic=magic
             # )
             print(f"OPEN SELL POSITION")
+
+        print("------------------------------------------------------------------")
 
         print("------------------------------------------------------------------")
