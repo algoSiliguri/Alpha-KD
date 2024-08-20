@@ -12,11 +12,19 @@ class UpstoxAPILive:
         # //Need to connect to Upstox with access token
         configuration = upstox_client.Configuration()
         configuration.access_token = access_token
-        self.api_version = '2.0'
-        self.user_api_instance = upstox_client.UserApi(upstox_client.ApiClient(configuration))
-        self.portfolio_api_instance = upstox_client.PortfolioApi(upstox_client.ApiClient(configuration))
-        self.intraday_instance = upstox_client.HistoryApi(upstox_client.ApiClient(configuration))
-        self.order_instance = upstox_client.OrderApi(upstox_client.ApiClient(configuration))
+        self.api_version = "2.0"
+        self.user_api_instance = upstox_client.UserApi(
+            upstox_client.ApiClient(configuration)
+        )
+        self.portfolio_api_instance = upstox_client.PortfolioApi(
+            upstox_client.ApiClient(configuration)
+        )
+        self.intraday_instance = upstox_client.HistoryApi(
+            upstox_client.ApiClient(configuration)
+        )
+        self.order_instance = upstox_client.OrderApi(
+            upstox_client.ApiClient(configuration)
+        )
         self.timeframes_mapping = {
             "1-minute": 1,
             "2-minutes": 2,
@@ -47,8 +55,10 @@ class UpstoxAPILive:
 
     def get_balance(self):
         try:
-            balance = self.user_api_instance.get_user_fund_margin(self.api_version, segment='SEC').to_dict()
-            return balance['data']['equity']['available_margin']
+            balance = self.user_api_instance.get_user_fund_margin(
+                self.api_version, segment="SEC"
+            ).to_dict()
+            return balance["data"]["equity"]["available_margin"]
         except Exception as e:
             print(f"Error fetching balance: {e}")
             return None
@@ -60,12 +70,21 @@ class UpstoxAPILive:
             print(f"Error fetching positions: {e}")
             return None
 
-    def place_order(
-            self, transaction_type, symbol, quantity):
+    def place_order(self, transaction_type, symbol, quantity):
 
-        body = upstox_client.PlaceOrderRequest(quantity, "D", "DAY", 0.0, "string", symbol,
-                                               "MARKET", transaction_type, 0,
-                                               0.0, False)
+        body = upstox_client.PlaceOrderRequest(
+            quantity,
+            "D",
+            "DAY",
+            0.0,
+            "string",
+            symbol,
+            "MARKET",
+            transaction_type,
+            0,
+            0.0,
+            False,
+        )
 
         try:
             api_response = self.order_instance.place_order(body, self.api_version)
@@ -113,9 +132,10 @@ class UpstoxAPILive:
         :return: DataFrame of historical data
         """
         try:
-            api_response = self.intraday_instance.get_intra_day_candle_data(symbol, interval,
-                                                                            self.api_version).to_dict()
-            return api_response['data']['candles']
+            api_response = self.intraday_instance.get_intra_day_candle_data(
+                symbol, interval, self.api_version
+            ).to_dict()
+            return api_response["data"]["candles"]
         except Exception as e:
             print(f"Error fetching intra-day candle data: {e}")
             return None
@@ -128,15 +148,19 @@ class UpstoxAPILive:
         """
         try:
             positions = self.get_positions()
-            columns_list = ["trading_symbol", "quantity", "average_price", "last_price", "pnl"]
+            columns_list = [
+                "trading_symbol",
+                "quantity",
+                "average_price",
+                "last_price",
+                "pnl",
+            ]
             summary = pd.DataFrame(positions, columns=columns_list)
             return summary
         except Exception as e:
             print(f"Error fetching open positions: {e}")
 
-    def run(
-            self, symbol, buy, sell, lot
-    ):
+    def run(self, symbol, buy, sell, lot):
         """
         Execute the trading logic, including opening and closing positions.
 

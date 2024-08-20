@@ -31,7 +31,9 @@ class MetricsDisplay:
         self.return_over_period = self.calculate_return_over_period()
         self.buy_count = self.get_buy_count()
         self.sell_count = self.get_sell_count()
-        self.days, self.hours_left, self.minutes_left = self.calculate_average_trade_lifetime()
+        self.days, self.hours_left, self.minutes_left = (
+            self.calculate_average_trade_lifetime()
+        )
         self.dd_max = self.get_dd_max()
         self.hit = self.calculate_hit()
         self.rr_ratio = self.calculate_rr_ratio()
@@ -42,9 +44,13 @@ class MetricsDisplay:
         self.cmgr = self.get_cmgr()
         self.avg_win, self.avg_loss, self.win_prob = self.calculate_avg_win_loss()
         self.trades = self.buy_count + self.sell_count
-        self.risk_of_ruin = self.calculate_risk_of_ruin(10000, self.trades, self.win_prob, self.avg_win, self.avg_loss)
+        self.risk_of_ruin = self.calculate_risk_of_ruin(
+            10000, self.trades, self.win_prob, self.avg_win, self.avg_loss
+        )
         self.sharpe_ratio = self.calculate_sharpe_ratio()
-        self.max_winning_streak, self.max_losing_streak = MetricsDisplay.calculate_streaks(self.data['returns'])
+        self.max_winning_streak, self.max_losing_streak = (
+            MetricsDisplay.calculate_streaks(self.data["returns"])
+        )
 
         self.display_metrics()
         # self.plot_risk_of_ruin(10000)
@@ -120,9 +126,7 @@ class MetricsDisplay:
 
     def calculate_pct_winning_month(self):
         sr = pd.Series(self.ben_month, name="returns")
-        return (
-            (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
-        )
+        return (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
 
     def calculate_sharpe_ratio(self):
         # Assuming 252 trading days in a year
@@ -139,10 +143,14 @@ class MetricsDisplay:
         annualized_return = np.mean(self.data["returns"]) * trading_days
 
         # Calculate annualized standard deviation of excess returns
-        annualized_std_excess_return = np.std(excess_returns, ddof=1) * np.sqrt(trading_days)
+        annualized_std_excess_return = np.std(excess_returns, ddof=1) * np.sqrt(
+            trading_days
+        )
 
         # Calculate annualized Sharpe ratio
-        sharpe_ratio = (annualized_return - annual_risk_free_rate) / annualized_std_excess_return
+        sharpe_ratio = (
+            annualized_return - annual_risk_free_rate
+        ) / annualized_std_excess_return
 
         return sharpe_ratio
 
@@ -192,7 +200,9 @@ class MetricsDisplay:
         else:
             return -avg_loss
 
-    def simulate_trading_strategy(self, initial_capital, trades, win_prob, avg_win, avg_loss):
+    def simulate_trading_strategy(
+        self, initial_capital, trades, win_prob, avg_win, avg_loss
+    ):
         capital = initial_capital
         capital_history = [capital]
         for _ in range(trades):
@@ -200,10 +210,14 @@ class MetricsDisplay:
             capital_history.append(capital)
         return capital_history
 
-    def calculate_risk_of_ruin(self, initial_capital, trades, win_prob, avg_win, avg_loss, simulations=100):
+    def calculate_risk_of_ruin(
+        self, initial_capital, trades, win_prob, avg_win, avg_loss, simulations=100
+    ):
         ruin_count = 0
         for _ in range(simulations):
-            capital_history = self.simulate_trading_strategy(initial_capital, trades, win_prob, avg_win, avg_loss)
+            capital_history = self.simulate_trading_strategy(
+                initial_capital, trades, win_prob, avg_win, avg_loss
+            )
             if min(capital_history) <= 0:
                 ruin_count += 1
         return ruin_count / simulations
@@ -243,7 +257,9 @@ class MetricsDisplay:
         print(
             f" Return (period): {'%.2f' % self.return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % self.dd_max}%"
         )
-        print(f" HIT ratio: {'%.2f' % self.hit}% \t\t\t\t\t\t R ratio: {'%.2f' % self.rr_ratio}")
+        print(
+            f" HIT ratio: {'%.2f' % self.hit}% \t\t\t\t\t\t R ratio: {'%.2f' % self.rr_ratio}"
+        )
         print(
             f" Best month return: {'%.2f' % self.best_month_return}% \t\t\t\t Worse month return: {'%.2f' % self.worse_month_return}%"
         )
@@ -251,7 +267,8 @@ class MetricsDisplay:
             f" Average ret/month: {'%.2f' % self.cmgr}% \t\t\t\t Profitable months: {'%.2f' % self.pct_winning_month}%"
         )
         print(
-            f" Sharpe Ratio: {'%.2f' % self.sharpe_ratio} \t\t\t\t\t Streaks: {self.max_winning_streak, self.max_losing_streak}")
+            f" Sharpe Ratio: {'%.2f' % self.sharpe_ratio} \t\t\t\t\t Streaks: {self.max_winning_streak, self.max_losing_streak}"
+        )
         print(
             "------------------------------------------------------------------------------------------------------------------"
         )
