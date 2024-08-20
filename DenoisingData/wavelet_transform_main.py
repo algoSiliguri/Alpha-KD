@@ -42,8 +42,8 @@ if __name__ == "__main__":
   # Final denoised signal with the best parameters
   final_denoised_signal = processor.wavelet_denoise(signal, best_wavelet, best_level, best_threshold, best_mode)
 
-  # Create a DataFrame from the denoised signal
-  df_denoised = pd.DataFrame({'denoised_signal': final_denoised_signal})
+  truncated_denoised_signal = final_denoised_signal[:len(time)]
+  df_denoised = pd.DataFrame({'time': time, 'denoised_signal': truncated_denoised_signal})
 
   # Save the DataFrame to a CSV file
   df_denoised.to_csv('../DenoisingData/final_denoised_signal.csv', index=False)
