@@ -43,6 +43,10 @@ class UpstoxAPILive:
             "1-day": 1440,
         }
 
+        
+        # A flag to check if buy orders are sent for the ticker
+        self.buy_order_sent_map: dict = {} # key: symbol, value: order_ids(a list)
+
     def get_profile(self):
         try:
             return self.user_api_instance.get_profile(self.api_version)
@@ -52,7 +56,7 @@ class UpstoxAPILive:
 
     def get_balance(self):
         try:
-            balance = self.user_api_instance.get_user_fund_margin(self.api_version, segment='SEC').to_dict()
+            balance = self.user_api_instance.get_user_fund_margin(self.api_version).to_dict()
             return balance['data']['equity']['available_margin']
         except Exception as e:
             print(f"Error fetching balance: {e}")
@@ -112,9 +116,12 @@ class UpstoxAPILive:
 
         """
         try:
-            ltp_response = self.market_data_instance.ltp(symbol,self.api_version).to_dict()
-            print(ltp_response)
-            return ltp_response.get("data").get("last_price")
+            instrument_key = self.map_instrument_key(symbol=symbol)
+            ltp_response = self.market_data_instance.ltp(instrument_key,self.api_version).to_dict()
+            price_data = ltp_response.get("data")
+            for key,val in price_data.items():
+                return val.get("last_price")
+
         except Exception as e:
             print(f"Error fetching intra-day candle data: {e}")
             traceback.print_exc()
@@ -130,6 +137,18 @@ class UpstoxAPILive:
                 instruments_map = json.load(file) 
 
             return [i.get(symbol) for i in instruments_map if i.get(symbol)][0]
+
+    def get_last_close(self, symbol):
+        try:
+            instrument_key = self.map_instrument_key(symbol=symbol)
+            yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+            api_response = self.intraday_instance.get_historical_candle_data(instrument_key, "day", yesterday, 
+                                                                             self.api_version).to_dict()
+            return api_response.get('data').get('candles')[0][4]
+        except Exception as e:
+            print(f"Error fetching intra-day candle data: {e}")
+            traceback.print_exc()
+            return None
 
     def get_rates(self, symbol, interval="30minute"):
         """
@@ -165,7 +184,7 @@ class UpstoxAPILive:
             print(f"Error fetching open positions: {e}")
 
     def run(
-            self, symbol, buy, sell, lot, pct_tp=0.02, pct_sl=0.01, comment="", magic=23400
+            self, symbol, buy, sell, qty, pct_tp=0.02, pct_sl=0.01, comment="", magic=23400
     ):
         """
         Execute the trading logic, including opening and closing positions.
@@ -173,7 +192,7 @@ class UpstoxAPILive:
         :param symbol: Trading symbol
         :param buy: Buy signal
         :param sell: Sell signal
-        :param lot: Lot size
+        :param qty: Qty to send order for
         :param pct_tp: Take profit percentage
         :param pct_sl: Stop loss percentage
         :param comment: Order comment
@@ -183,17 +202,20 @@ class UpstoxAPILive:
         print(
             "Date: ", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "\tSYMBOL:", symbol
         )
-        orders = self.resume()
+        positions = self.resume()
         print(f"BUY: {buy} \t  SELL: {sell}")
 
         position = None
         identifier = None
 
-        if not orders.empty:
-            position_list = orders.loc[orders["symbol"] == symbol]
+        if not positions.empty:
+            position_list = positions.loc[positions["symbol"] == symbol]
             if not position_list.empty:
                 position = position_list.iloc[0]["quantity"]
                 identifier = position_list.iloc[0]["symbol"]
+
+                # The revised qty for the order
+                qty = position - qty
 
         if position is not None:
             print(f"POSITION: {position} \t ID: {identifier}")
@@ -202,7 +224,7 @@ class UpstoxAPILive:
             buy = False
         elif not buy and position == 0:
             # self.place_order(
-            #     TransactionType.Sell, symbol, lot, comment=comment, magic=magic
+            #     TransactionType.Sell, symbol, qty, comment=comment, magic=magic
             # )
             print(f"CLOSE BUY POSITION")
 
@@ -210,19 +232,24 @@ class UpstoxAPILive:
             sell = False
         elif not sell and position == 1:
             # self.place_order(
-            #     TransactionType.Buy, symbol, lot, comment=comment, magic=magic
+            #     TransactionType.Buy, symbol, qty, comment=comment, magic=magic
             # )
             print(f"CLOSE SELL POSITION")
 
         if buy:
-            # self.place_order(
-            #     TransactionType.Buy, symbol, lot, comment=comment, magic=magic
-            # )
-            print(f"OPEN BUY POSITION")
+            if symbol not in self.buy_order_sent_map.keys():
+                # self.place_order(
+                #     TransactionType.Buy, symbol, qty, comment=comment, magic=magic
+                # )
+                self.buy_order_sent_map.get(symbol) = 1
+                print(f"OPEN BUY POSITION")
+            else:
+                print("cacelling previous order")
+                print(f"OPEN NEW BUY POSITION")
 
         if sell:
             # self.place_order(
-            #     TransactionType.Sell, symbol, lot, comment=comment, magic=magic
+            #     TransactionType.Sell, symbol, qty, comment=comment, magic=magic
             # )
             print(f"OPEN SELL POSITION")
 
