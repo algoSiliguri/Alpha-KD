@@ -1,5 +1,7 @@
+import time
 import pandas as pd
 import ta
+import traceback
 
 class TradingStrategy:
   """
@@ -28,7 +30,7 @@ class TradingStrategy:
       """
       try:
           self.data["VWAP"] = ta.volume.volume_weighted_average_price(
-              self.data["High"], self.data["Low"], self.data["Close"], self.data["Volume"]
+              self.data["High"], self.data["Low"], self.data["Close"], self.data["Volume"],2
           )
       except Exception as e:
           print(f"Error calculating VWAP: {e}")
@@ -44,13 +46,13 @@ class TradingStrategy:
           bool: True if buy signal is generated, False otherwise.
       """
       try:
-          if i < 3:
+          if i < 4:
               return False  # Do not generate any buy/sell signal for the first 2 hours
 
           else:
 
-              if i == 3:
-                  first_2_hours_above_vwap = all(self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j] for j in range(3))
+              if i == 4:
+                  first_2_hours_above_vwap = all(self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j] for j in range(1,4))
                   if first_2_hours_above_vwap:
                       return True
               else:
@@ -118,9 +120,12 @@ class TradingStrategy:
           # Calculate VWAP for the updated data
           self.calculate_vwap()
 
+        #   print(self.data)
+
           # Ensure the gap is calculated only once
           if self.gap is None:
               self.gap = (df_intraday_30min["Open"].iloc[0] - self.previous_day_close) / self.previous_day_close * 100
+          
 
           buy = False
           sell = False
@@ -128,18 +133,22 @@ class TradingStrategy:
           for i in range(len(df_intraday_30min)):
               if self.gap > 3:
                   if self.check_gap_up(i):
+                      print("Trade signalled from gap up")
                       buy = True
                       break  # Exit loop after the first buy signal
               elif -1 <= self.gap <= 1:
                   if self.check_flat_open(i):
+                      print("Trade signalled from flat open")
                       buy = True
                       break  # Exit loop after the first buy signal
               elif self.gap < -3:
                   if self.check_gap_down(i, self.previous_day_close * 0.97):  # Example stop loss at 3% below previous close
+                      print("Trade signalled from gap down")
                       buy = True
                       break  # Exit loop after the first buy signal
 
           return buy, sell
       except Exception as e:
+          traceback.print_exc()
           print(f"Error creating signals: {e}")
           return False, False

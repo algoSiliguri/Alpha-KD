@@ -18,9 +18,9 @@ class IntradayDataAppender:
           upstox_api_live_instance (UpstoxAPILive): An instance of the UpstoxAPILive class.
       """
       self.upstox_api_live_instance = upstox_api_live_instance
-      self.df = pd.DataFrame(columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+      self.df = pd.DataFrame(columns=['timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
 
-  def append_data_to_dataframe(self, symbol, interval="30minute"):
+  def append_data_to_dataframe(self, symbol, interval="30minute", initial_run = False):
       """
       Fetches intraday OHLC data for a given symbol and interval, and appends it to the DataFrame.
 
@@ -33,6 +33,11 @@ class IntradayDataAppender:
       """
       try:
           data = self.upstox_api_live_instance.get_rates(symbol, interval)
+
+          # For the first time in the day (Revert the data sequence)
+          if initial_run:
+              data = data[::-1]
+              
           if data:
               for candle in data:
                   timestamp = datetime.fromisoformat(candle[0])
@@ -45,14 +50,15 @@ class IntradayDataAppender:
                   close_price = candle[4]
                   volume = candle[5]
 
-                  self.df = self.df.append({
-                      'timestamp': timestamp,
-                      'open': open_price,
-                      'high': high_price,
-                      'low': low_price,
-                      'close': close_price,
-                      'volume': volume
-                  }, ignore_index=True)
+                  self.df.loc[len(self.df)] = {
+                                                'timestamp': timestamp,
+                                                'Open': open_price,
+                                                'High': high_price,
+                                                'Low': low_price,
+                                                'Close': close_price,
+                                                'Volume': volume
+                                                }
+
       except Exception as e:
           print(f"Error appending data to DataFrame: {e}")
 

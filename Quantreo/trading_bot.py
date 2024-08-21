@@ -1,7 +1,8 @@
 from datetime import datetime
 import time
+import traceback
 import pandas as pd
-from IntradayDataAppender import IntradayDataAppender
+from .IntradayDataAppender import IntradayDataAppender
 
 class TradingBot:
   def __init__(self, api, strategy, verifier, symbol, lot, timeframe, pct_tp, pct_sl, prev_close):
@@ -28,6 +29,7 @@ class TradingBot:
 
       # Adding fucntionality to add intraday 30 min data
       self.intraday_data_appender = IntradayDataAppender(api)
+
       #write logic for previous close
       self.prev_close = prev_close
 
@@ -41,13 +43,15 @@ class TradingBot:
       # get auth token from upstox
 
       try:
-          profile = self.api.get_profile()
+          profile = self.api.get_profile().to_dict()
           print("------------------------------------------------------------------")
-          print(f"User ID: {profile['user_id']} \tName: {profile['name']}")
+          print(f"User ID: {profile.get('data')['user_id']} \tName: {profile.get('data')['user_name']}")
           balance = self.api.get_balance()
-          print(f"Balance: {balance['equity']['available_margin']} USD")
+          print(balance)
+          print(f"Balance: INR {balance}")
           print("------------------------------------------------------------------")
       except Exception as e:
+          traceback.format_exc()
           print(f"Error initializing Upstox: {e}")
 
   def get_open_positions(self):
@@ -92,21 +96,28 @@ class TradingBot:
       """
       print("Starting trading bot...")
       self.initialize()
-      timeframe_condition = self.verifier.get_verification_time(self.timeframe)
+      timeframe_conditions = self.verifier.get_verification_time(self.timeframe)
+      self.intraday_data_appender.append_data_to_dataframe(self.symbol, initial_run=True)
 
       while True:
           try:
-              current_time = datetime.now().strftime("%H:%M:%S")
-              if current_time in timeframe_condition:
-                  print(f"Current time: {current_time}")
+              # The current time
+              current_time = datetime.now()
+
+              # If the time is within the trading time limits
+              if timeframe_conditions[1] > current_time > timeframe_conditions[0]:
+
                   try:
+
                       self.intraday_data_appender.append_data_to_dataframe(self.symbol)
                       df_intraday_30min = self.intraday_data_appender.get_dataframe()
+                      # Managing the signals
                       buy, sell = self.strategy.create_signals(df_intraday_30min)
+                      print(f"Buy Signal: {buy}\nSell Signal: {sell}")
                       self.run(buy, sell)
-                      time.sleep(1)
+                      time.sleep(15)
                   except Exception as e:
                       print(f"Error in main execution: {e}")
           except Exception as e:
               print(f"Error in trading loop: {e}")
-              time.sleep(1)  # Sleep for a bit before retrying
+              time.sleep(20)  # Sleep for a bit before retrying

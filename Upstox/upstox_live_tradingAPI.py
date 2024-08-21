@@ -1,10 +1,14 @@
 #### Import the upstock sdk
 # from upstox_api.api import Upstox, TransactionType, OrderType, ProductType, Exchange
 from datetime import datetime, timedelta
+import json
+import time
 import pandas as pd
 import numpy as np
 import upstox_client
+import traceback
 from upstox_client.rest import ApiException
+
 
 
 class UpstoxAPILive:
@@ -17,6 +21,7 @@ class UpstoxAPILive:
         self.portfolio_api_instance = upstox_client.PortfolioApi(upstox_client.ApiClient(configuration))
         self.intraday_instance = upstox_client.HistoryApi(upstox_client.ApiClient(configuration))
         self.order_instance = upstox_client.OrderApi(upstox_client.ApiClient(configuration))
+        self.market_data_instance = upstox_client.MarketQuoteApi(upstox_client.ApiClient(configuration))
         self.timeframes_mapping = {
             "1-minute": 1,
             "2-minutes": 2,
@@ -95,6 +100,37 @@ class UpstoxAPILive:
     #
     #     return time_list
 
+    def get_ltp(self, symbol):
+        """
+
+        Parameters
+        ----------
+        symbol: The trading symbol for the ticker
+
+        Returns: The Last Trading Price
+        -------
+
+        """
+        try:
+            ltp_response = self.market_data_instance.ltp(symbol,self.api_version).to_dict()
+            print(ltp_response)
+            return ltp_response.get("data").get("last_price")
+        except Exception as e:
+            print(f"Error fetching intra-day candle data: {e}")
+            traceback.print_exc()
+            return None
+
+    def map_instrument_key(self, symbol, instrument_type = "STK"):
+        """
+        Maps the instrument key to the respective symbol
+        """ 
+        # Open and read the instrument key
+        if instrument_type == "STK":
+            with open('utils/instrumentsData.json', 'r') as file:
+                instruments_map = json.load(file) 
+
+            return [i.get(symbol) for i in instruments_map if i.get(symbol)][0]
+
     def get_rates(self, symbol, interval="30minute"):
         """
         Fetch live intraday data for a given symbol and timeframe.
@@ -104,11 +140,13 @@ class UpstoxAPILive:
         :return: DataFrame of historical data
         """
         try:
-            api_response = self.intraday_instance.get_intra_day_candle_data(symbol, interval,
+            instrument_key = self.map_instrument_key(symbol=symbol)
+            api_response = self.intraday_instance.get_intra_day_candle_data(instrument_key, interval,
                                                                             self.api_version).to_dict()
-            return api_response['data']['candles']
+            return api_response.get('data').get('candles')
         except Exception as e:
             print(f"Error fetching intra-day candle data: {e}")
+            traceback.print_exc()
             return None
 
     def resume(self):
@@ -118,11 +156,12 @@ class UpstoxAPILive:
         :return: DataFrame of open positions
         """
         try:
-            positions = self.get_positions()
+            positions = self.get_positions().to_dict()
             columns_list = ["trading_symbol", "quantity", "average_price", "last_price", "pnl"]
-            summary = pd.DataFrame(positions, columns=columns_list)
-            return summary
+            positions_dict = pd.DataFrame(positions, columns=columns_list)
+            return positions_dict
         except Exception as e:
+            traceback.print_exc()
             print(f"Error fetching open positions: {e}")
 
     def run(
@@ -140,11 +179,10 @@ class UpstoxAPILive:
         :param comment: Order comment
         :param magic: Magic number for the order
         """
-        print("------------------------------------------------------------------")
+        print("----------------------Entering Trade--------------------------------------------")
         print(
             "Date: ", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "\tSYMBOL:", symbol
         )
-
         orders = self.resume()
         print(f"BUY: {buy} \t  SELL: {sell}")
 
