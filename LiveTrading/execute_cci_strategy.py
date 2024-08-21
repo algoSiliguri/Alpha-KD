@@ -1,5 +1,4 @@
 
-
 from LiveTradingStrategy.live_trading_strategy import TradingStrategy
 from Quantreo.trading_bot import TradingBot
 from Quantreo.timeframe_verifier import TimeframeVerifier
@@ -11,7 +10,7 @@ import threading
 
 
 if __name__ == "__main__":
-    access_token = "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI4N0FIUzMiLCJqdGkiOiI2NmM1ODMxMzRkNWFhYjcyM2Q2NmY4YTIiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaWF0IjoxNzI0MjIwMTc5LCJpc3MiOiJ1ZGFwaS1nYXRld2F5LXNlcnZpY2UiLCJleHAiOjE3MjQyNzc2MDB9.z4cBanGk-kPuOcW-GUj0sAx_cKz67gLUiierc8jFazE'"
+    access_token = "abcd"
     symbol = "EURUSD-Z"
 
     # Open and read the tickers flagged
