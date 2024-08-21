@@ -1,7 +1,7 @@
 from datetime import datetime, time
 
 class TimeframeVerifier:
-    def get_verification_time(self, timeframe):
+    def get_verification_time(self):
         """
         Get the verification time for the given timeframe.
         This function needs to be implemented based on your specific logic.
