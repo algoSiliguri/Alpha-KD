@@ -5,7 +5,7 @@ import pandas as pd
 from .IntradayDataAppender import IntradayDataAppender
 
 class TradingBot:
-  def __init__(self, api, strategy, verifier, symbol, lot, timeframe, pct_tp, pct_sl, prev_close):
+  def __init__(self, api, strategy, verifier, symbol, qty, pct_tp, pct_sl, prev_close):
       """
       Initialize the TradingBot with the necessary components and trading parameters.
 
@@ -22,8 +22,7 @@ class TradingBot:
       self.strategy = strategy
       self.verifier = verifier
       self.symbol = symbol
-      self.lot = lot
-      self.timeframe = timeframe
+      self.qty = qty
       self.pct_tp = pct_tp
       self.pct_sl = pct_sl
 
@@ -32,6 +31,7 @@ class TradingBot:
 
       #write logic for previous close
       self.prev_close = prev_close
+
 
   def initialize(self):
       """
@@ -82,7 +82,8 @@ class TradingBot:
       """
       try:
           print("Orchestrating trades in TradingBot...")
-          self.api.run(self.symbol, buy, sell, self.lot, self.pct_tp, self.pct_sl)
+          # Getting the api to run for sending orders
+          self.api.run(self.symbol, buy, sell, self.qty, self.pct_tp, self.pct_sl)
       except Exception as e:
           print(f"Error executing trades: {e}")
 
@@ -96,7 +97,7 @@ class TradingBot:
       """
       print("Starting trading bot...")
       self.initialize()
-      timeframe_conditions = self.verifier.get_verification_time(self.timeframe)
+      timeframe_conditions = self.verifier.get_verification_time()
       self.intraday_data_appender.append_data_to_dataframe(self.symbol, initial_run=True)
 
       while True:
@@ -111,11 +112,15 @@ class TradingBot:
 
                       self.intraday_data_appender.append_data_to_dataframe(self.symbol)
                       df_intraday_30min = self.intraday_data_appender.get_dataframe()
+
                       # Managing the signals
                       buy, sell = self.strategy.create_signals(df_intraday_30min)
                       print(f"Buy Signal: {buy}\nSell Signal: {sell}")
+
+                      # Running the order sending mechanism
                       self.run(buy, sell)
-                      time.sleep(15)
+                      time.sleep(5)
+
                   except Exception as e:
                       print(f"Error in main execution: {e}")
           except Exception as e:
