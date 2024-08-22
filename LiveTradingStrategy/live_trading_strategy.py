@@ -20,7 +20,7 @@ class TradingStrategy:
       Args:
           previous_day_close (float): The closing price of the previous day.
       """
-      self.data = None
+      self.data: pd.DataFrame = None
       self.previous_day_close = previous_day_close
       self.gap = None
 
@@ -29,41 +29,62 @@ class TradingStrategy:
       Calculate VWAP and add it to the DataFrame.
       """
       try:
-          self.data["VWAP"] = ta.volume.volume_weighted_average_price(
-              self.data["High"], self.data["Low"], self.data["Close"], self.data["Volume"],2
-          )
+            self.data['Cumulative_TPV'] = self.data['Close'] * self.data['Volume']
+            self.data['Cumulative_Volume'] = self.data['Volume'].cumsum()
+            self.data['Cumulative_TPV'] = self.data['Cumulative_TPV'].cumsum()
+            
+            # Calculate VWAP
+            self.data['VWAP'] = self.data['Cumulative_TPV'] / self.data['Cumulative_Volume']
+            
+            # Set the VWAP of the first row to be the Close price itself
+            self.data.at[self.data.index[0], 'VWAP'] = self.data.at[self.data.index[0], 'Close']
+
+            # Round VWAP to one decimal place
+            self.data['VWAP'] = self.data['VWAP'].round(1)
+            
+            # Drop the intermediate cumulative columns
+            self.data.drop(columns=['Cumulative_TPV', 'Cumulative_Volume'], inplace=True)
+
       except Exception as e:
           print(f"Error calculating VWAP: {e}")
 
   def check_gap_up(self, i):
-      """
-      Check for gap up conditions and return buy signal if conditions are met.
+    """
+    Check for gap up conditions and return a buy signal if conditions are met.
 
-      Args:
-          i (int): Current index in the DataFrame.
+    Args:
+        i (int): Current index in the DataFrame.
 
-      Returns:
-          bool: True if buy signal is generated, False otherwise.
-      """
-      try:
-          if i < 4:
-              return False  # Do not generate any buy/sell signal for the first 2 hours
+    Returns:
+        bool: True if buy signal is generated, False otherwise.
+    """
+    try:
+        # Do not generate any signal for the first two hours (assuming each row is a minute or hour of trading)
+        if i < 4:
+            return False
 
-          else:
-
-              if i == 4:
-                  first_2_hours_above_vwap = all(self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j] for j in range(1,4))
-                  if first_2_hours_above_vwap:
-                      return True
-              else:
-                  if self.data["Close"].iloc[i - 1] < self.data["VWAP"].iloc[i - 1] and self.data["Close"].iloc[i] >= \
-                          self.data["VWAP"].iloc[i]:
-                      return True
-          return False
-      except Exception as e:
-          print(f"Error checking gap up: {e}")
-          return False
-
+        # Check if the first two hours consistently traded above VWAP
+        elif i == 4:
+            first_2_hours_above_vwap = all(
+                self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j]
+                or (self.data["Close"].iloc[j] < self.data["VWAP"].iloc[j] and 
+                    self.data["Close"].iloc[j] >= self.data["VWAP"].iloc[j] - 0.5)
+                for j in range(1, 4)
+            )
+            if first_2_hours_above_vwap:
+                return True
+        
+        # Generate signal if the current close crosses above VWAP after a small dip below VWAP
+        elif(self.data["Close"].iloc[i - 1] < self.data["VWAP"].iloc[i - 1] 
+            and self.data["Close"].iloc[i] >= self.data["VWAP"].iloc[i]):
+            return True
+        
+        return False
+    
+    except Exception as e:
+        print(f"Error checking gap up: {e}")
+        return False
+    
   def check_flat_open(self, i):
       """
       Check for flat open conditions and return buy signal if conditions are met.
@@ -75,9 +96,13 @@ class TradingStrategy:
           bool: True if buy signal is generated, False otherwise.
       """
       try:
-          if self.data["Close"].iloc[i] >= self.data["VWAP"].iloc[i]:
+          # If the price had gone below vwap but came right back up
+          if(self.data["Close"].iloc[i - 1] < self.data["VWAP"].iloc[i - 1] 
+            and self.data["Close"].iloc[i] >= self.data["VWAP"].iloc[i]):
+              
               return True
-          return False
+          else:
+            return False
       except Exception as e:
           print(f"Error checking flat open: {e}")
           return False
@@ -120,7 +145,7 @@ class TradingStrategy:
           # Calculate VWAP for the updated data
           self.calculate_vwap()
 
-        #   print(self.data)
+          print(self.data)
 
           # Ensure the gap is calculated only once
           if self.gap is None:
