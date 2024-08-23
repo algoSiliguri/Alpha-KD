@@ -17,6 +17,7 @@ class CciStrategy:
         self.atr_period = parameters["atr_period"]
         self.atr_multiplier = parameters["atr_multiplier"]
         self.cost = parameters["cost"]
+        self.capital = parameters.get("capital", 100000)  # Added Default capital
         self.start_date_backtest = self.data.index[0]
 
         # Initialize strategy state variables
@@ -25,6 +26,8 @@ class CciStrategy:
         self.entry_time = None
         self.exit_time = None  # Added exit_time initialization
         self.trailing_stop = None
+        self.shares = 0  # Added shares
+        self.max_capital_used = 0  # Added max_capital used
 
         # Initialize output dictionary
         self.output_dictionary = parameters.copy()
@@ -40,6 +43,20 @@ class CciStrategy:
         self.data = cci(self.data, window=self.cci_period)
         # Calculate ATR using the atr function
         self.data = atr(self.data, window=self.atr_period)
+
+    def calculate_max_shares_and_capital(self, open_price):  # Added max_shares_and_capital function
+        """
+        Calculate the maximum number of shares that can be bought and the capital used.
+
+        :param open_price: The price at which shares are bought.
+        :return: Tuple of maximum shares and capital used.
+        """
+        if open_price <= 0:
+            raise ValueError("Open price must be greater than zero.")
+
+        max_shares = self.capital // open_price
+        max_capital_used = max_shares * open_price
+        return int(max_shares), max_capital_used
 
     def get_entry_signal(self, time):
         """
@@ -65,10 +82,12 @@ class CciStrategy:
             self.buy = True
             self.open_buy_price = self.data.loc[time]["open"]
             self.entry_time = time
+            # Calculate the maximum number of shares and capital used
+            self.shares, self.max_capital_used = self.calculate_max_shares_and_capital(self.open_buy_price)
             # Initialize the trailing stop
             self.trailing_stop = (
-                self.open_buy_price
-                - self.atr_multiplier * self.data.loc[time][f"ATR_{self.atr_period}"]
+                    self.open_buy_price
+                    - self.atr_multiplier * self.data.loc[time][f"ATR_{self.atr_period}"]
             )
         else:
             entry_signal = 0
@@ -103,12 +122,10 @@ class CciStrategy:
         if current_price < self.trailing_stop:
             self.buy = False
             self.exit_time = time
-            exit_price = self.data.loc[time][
-                "open"
-            ]  # Assuming we exit at the next open price
+            exit_price = self.data.loc[time]["open"]  # Assuming we exit at the next open price
             profit_loss = (
-                exit_price - self.open_buy_price - self.cost
-            ) / self.open_buy_price
+                                  (exit_price - self.open_buy_price) * self.shares - self.cost
+                          ) / self.max_capital_used
             return profit_loss, self.exit_time
 
         # If no exit, return 0 and the current exit time
