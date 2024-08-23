@@ -254,11 +254,11 @@ class UpstoxAPILive:
                 #     TransactionType.Buy, symbol, qty, comment=comment, magic=magic
                 # )
                 self.buy_order_sent_map[symbol] = 1
-                print(f"Sent buy order for:{symbol}, Qty:{qty}, Transaction type: Buy")
+                print(f"Sent buy order for:{symbol}\t Qty:{qty}\t Transaction type: Buy")
             else:
                 # TODO: Cancel the previous order on the same ticker from here
                 print("Cancelling the previous order.")
-                print(f"Sent buy order for:{symbol}, Qty:{qty}, Transaction type: Buy")
+                print(f"Sent buy order for:{symbol}\t Qty:{qty}\t Transaction type: Buy")
 
         # if sell:
         #     # self.place_order(

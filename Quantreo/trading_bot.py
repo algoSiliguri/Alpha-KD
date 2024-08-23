@@ -119,7 +119,7 @@ class TradingBot:
 
                       # Running the order sending mechanism
                       self.run(buy, sell)
-                      time.sleep(5)
+                      time.sleep(20)
 
                   except Exception as e:
                       print(f"Error in main execution: {e}")
