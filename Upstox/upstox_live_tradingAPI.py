@@ -180,7 +180,7 @@ class UpstoxAPILive:
             positions_dict = pd.DataFrame(positions, columns=columns_list)
             return positions_dict
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
             print(f"Error fetching open positions: {e}")
 
     def run(
@@ -205,52 +205,65 @@ class UpstoxAPILive:
         positions = self.resume()
         print(f"BUY: {buy} \t  SELL: {sell}")
 
+        # If there are no signals return
+        if not buy and not sell:
+            print("No signal found")
+            return
+
+        # The position and the symbol for the signal
         position = None
-        identifier = None
+        p_symbol = None
 
-        if not positions.empty:
-            position_list = positions.loc[positions["symbol"] == symbol]
-            if not position_list.empty:
-                position = position_list.iloc[0]["quantity"]
-                identifier = position_list.iloc[0]["symbol"]
+        if position:
+            if positions.empty:
+                position_list = positions.loc[positions["symbol"] == symbol]
+                if not position_list.empty:
+                    position = position_list.iloc[0]["quantity"]
+                    p_symbol = position_list.iloc[0]["symbol"]
 
-                # The revised qty for the order
-                qty = position - qty
+                    # The revised qty for the order
+                    qty = position - qty
 
-        if position is not None:
-            print(f"POSITION: {position} \t ID: {identifier}")
+                    # If it is a buy but doesn't have a valid quantity
+                    if qty < 0  and buy:
+                        return
+                    
 
-        if buy and position == 0:
-            buy = False
-        elif not buy and position == 0:
-            # self.place_order(
-            #     TransactionType.Sell, symbol, qty, comment=comment, magic=magic
-            # )
-            print(f"CLOSE BUY POSITION")
+        # if position is not None:
+        #     print(f"POSITION: {position} \t Symbol: {symbol}")
 
-        if sell and position == 1:
-            sell = False
-        elif not sell and position == 1:
-            # self.place_order(
-            #     TransactionType.Buy, symbol, qty, comment=comment, magic=magic
-            # )
-            print(f"CLOSE SELL POSITION")
+        # if buy and position == 0:
+        #     buy = False
+        # elif not buy and position == 0:
+        #     # self.place_order(
+        #     #     TransactionType.Sell, symbol, qty, comment=comment, magic=magic
+        #     # )
+        #     print(f"CLOSE BUY POSITION")
+
+        # if sell and position == 1:
+        #     sell = False
+        # elif not sell and position == 1:
+        #     # self.place_order(
+        #     #     TransactionType.Buy, symbol, qty, comment=comment, magic=magic
+        #     # )
+        #     print(f"CLOSE SELL POSITION")
 
         if buy:
             if symbol not in self.buy_order_sent_map.keys():
                 # self.place_order(
                 #     TransactionType.Buy, symbol, qty, comment=comment, magic=magic
                 # )
-                self.buy_order_sent_map.get(symbol) = 1
-                print(f"OPEN BUY POSITION")
+                self.buy_order_sent_map[symbol] = 1
+                print(f"Sent buy order for:{symbol}, Qty:{qty}, Transaction type: Buy")
             else:
-                print("cacelling previous order")
-                print(f"OPEN NEW BUY POSITION")
+                # TODO: Cancel the previous order on the same ticker from here
+                print("Cancelling the previous order.")
+                print(f"Sent buy order for:{symbol}, Qty:{qty}, Transaction type: Buy")
 
-        if sell:
-            # self.place_order(
-            #     TransactionType.Sell, symbol, qty, comment=comment, magic=magic
-            # )
-            print(f"OPEN SELL POSITION")
+        # if sell:
+        #     # self.place_order(
+        #     #     TransactionType.Sell, symbol, qty, comment=comment, magic=magic
+        #     # )
+        #     print(f"OPEN SELL POSITION")
 
         print("------------------------------------------------------------------")
