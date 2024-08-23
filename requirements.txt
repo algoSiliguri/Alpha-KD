@@ -23,3 +23,5 @@ seaborn
 requests
 upstox-python-sdk
 PyWavelets
+hmmlearn
+statsmodels
