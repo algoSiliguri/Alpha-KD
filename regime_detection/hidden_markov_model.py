@@ -58,3 +58,37 @@ class HiddenMarkovModel(RegimeModel):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             raise
+
+    def num_params(self):
+        """
+        Calculate the number of parameters in the model.
+
+        This method computes the total number of parameters required for the model,
+        including transition probabilities, emission means and covariances, and initial
+        state probabilities.
+
+        Returns:
+            int: The total number of parameters in the model.
+
+        Raises:
+            AttributeError: If the model does not have the attribute `n_components`.
+            TypeError: If `n_components` is not an integer.
+        """
+        try:
+            n_components = self.model.n_components
+            if not isinstance(n_components, int):
+                raise TypeError("n_components must be an integer.")
+
+            # Transition probabilities + emission means and covariances + initial state probabilities
+            num_params = (
+                n_components * (n_components - 1)
+                + 2 * n_components
+                + (n_components - 1)
+            )
+            return num_params
+        except AttributeError as e:
+            raise AttributeError(
+                "The model does not have the attribute 'n_components'."
+            ) from e
+        except TypeError as e:
+            raise TypeError("n_components must be an integer.") from e

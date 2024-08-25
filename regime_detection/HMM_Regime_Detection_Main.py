@@ -4,6 +4,7 @@ import pandas as pd
 from RegimePlotter import RegimePlotter
 from feature_engineering import FeatureEngineering
 from feed_forward_trainer import FeedForwardTrainer
+from AdaptiveFeedForwardTrainer import AdaptiveFeedForwardTrainer
 
 # Example usage
 filepath = "../Upstox_Data/Fixed_Time_Bars/NIFTYBEES_day.csv"
@@ -29,8 +30,11 @@ log_return_data = data["log_return"].values.reshape(-1, 1)
 # Initialize the RegimeDetection
 regime_detector = RegimeDetection("hmm", params)
 
-# Initialize the FeedForwardTrainer
-trainer = FeedForwardTrainer(regime_detector, retrain_step=20)
+# # Initialize the FeedForwardTrainer
+# trainer = FeedForwardTrainer(regime_detector, retrain_step=20)
+
+# Initialize the AdaptiveFeedForwardTrainer
+trainer = AdaptiveFeedForwardTrainer(regime_detector, window_size=10, adaptive=True)
 
 # Train and predict
 split_index = int(len(log_return_data) * 0.3)
