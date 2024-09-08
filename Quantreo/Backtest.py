@@ -6,7 +6,6 @@ from typing import Any, Dict, Optional
 
 from Quantreo.Metrics import Metrics
 from Quantreo.MetricsUtility import MetricsUtility
-from Strategies.CciStrategy import CciStrategy
 from MarketDownRegimeAnalyzer.thresholdstrategy import CustomStrategy
 
 
@@ -56,8 +55,8 @@ class Backtest:
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
 
         self.data = data.loc[
-            self.start_date_backtest :
-        ].copy()  # Use .copy() to avoid SettingWithCopyWarning
+                    self.start_date_backtest:
+                    ].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Initialize columns if they don't exist
         for col in ["returns", "duration", "buy_count", "sell_count"]:
@@ -93,7 +92,7 @@ class Backtest:
             if position_return != 0:
                 self.data.loc[current_time, "returns"] = position_return
                 self.data.loc[current_time, "duration"] = (
-                    self.exit_trade_time - self.entry_trade_time
+                        self.exit_trade_time - self.entry_trade_time
                 ).total_seconds()
                 self.metricsUtility.construct_stock_data(position_return, self.entry_trade_time, self.exit_trade_time)
 

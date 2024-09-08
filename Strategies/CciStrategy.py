@@ -137,7 +137,7 @@ class CciStrategy:
             self.exit_time = time
             exit_price = self.data.loc[time]["open"]  # Assuming we exit at the next open price
             # Calculate profit/loss
-            profit_loss = ((exit_price - self.open_buy_price) * self.shares - self.cost) / self.max_capital_used
+            profit_loss = ((exit_price - self.open_buy_price - self.cost) * self.shares) / self.max_capital_used
             # Get the last available capital before the exit
             available_capital = self.metricUtility.get_last_capital()
             # Update the capital with profit or loss from the trade
