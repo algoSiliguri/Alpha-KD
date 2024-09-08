@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
-from Quantreo.DisplayMetrics import MetricsDisplay
-from Strategies.CciStrategy import CciStrategy
+from Quantreo.Metrics import Metrics
+from Quantreo.MetricsUtility import MetricsUtility
 from MarketDownRegimeAnalyzer.thresholdstrategy import CustomStrategy
 
 
@@ -39,18 +39,24 @@ class Backtest:
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        TradingStrategy: Any,
-        parameters: Dict[str, Any],
-        run_directly: bool = False,
-        title: Optional[str] = None,
+            self,
+            data: pd.DataFrame,
+            TradingStrategy: Any,
+            parameters: Dict[str, Any],
+            initial_capital: int,
+            run_directly: bool = False,
+            title: Optional[str] = None,
     ):
-        self.TradingStrategy = TradingStrategy(data, parameters)
+        self.metricsUtility = MetricsUtility()
+        self.metricsUtility.set_capital(initial_capital)
+        self.metricsUtility.set_capital_history(initial_capital)
+
+        self.TradingStrategy = TradingStrategy(data, parameters, self.metricsUtility)
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
+
         self.data = data.loc[
-            self.start_date_backtest :
-        ].copy()  # Use .copy() to avoid SettingWithCopyWarning
+                    self.start_date_backtest:
+                    ].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Initialize columns if they don't exist
         for col in ["returns", "duration", "buy_count", "sell_count"]:
@@ -63,7 +69,8 @@ class Backtest:
         if run_directly:
             self.run()
             self.get_vector_metrics()
-            self.metric_display = MetricsDisplay(self.data)
+            self.metrics = Metrics(self.data)
+            self.metricsUtility.save_to_csv("ADANIENT_Daily")
             self.display_graphs(title)
 
     def run(self) -> None:
@@ -72,6 +79,7 @@ class Backtest:
             entry_signal, self.entry_trade_time = self.TradingStrategy.get_entry_signal(
                 current_time
             )
+
             self.data.loc[current_time, "buy_count"] = 1 if entry_signal == 1 else 0
             self.data.loc[current_time, "sell_count"] = 1 if entry_signal == -1 else 0
 
@@ -84,8 +92,9 @@ class Backtest:
             if position_return != 0:
                 self.data.loc[current_time, "returns"] = position_return
                 self.data.loc[current_time, "duration"] = (
-                    self.exit_trade_time - self.entry_trade_time
+                        self.exit_trade_time - self.entry_trade_time
                 ).total_seconds()
+                self.metricsUtility.construct_stock_data(position_return, self.entry_trade_time, self.exit_trade_time)
 
     def get_vector_metrics(self) -> None:
         # Compute Cumulative Returns
@@ -157,6 +166,7 @@ backtest = Backtest(
     data,
     CustomStrategy,
     parameters,
+    10000,
     run_directly=True,
     title="Threshold Strategy Backtest",
 )

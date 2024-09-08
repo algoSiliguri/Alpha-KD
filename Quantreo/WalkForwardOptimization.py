@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from Quantreo.Backtest import Backtest
-from Quantreo.DisplayMetrics import MetricsDisplay
+from Quantreo.Metrics import Metrics
 
 
 class WalkForwardOptimization:
@@ -292,9 +292,8 @@ class WalkForwardOptimization:
         try:
             # Backtest initialization with a specific dataset and set of parameters
             self.BT = Backtest(
-                data=sample, TradingStrategy=self.TradingStrategy, parameters=params
-            )
-            self.metrics = MetricsDisplay(data=sample)
+                data=sample, TradingStrategy=self.TradingStrategy, parameters=params, initial_capital=10000)
+            self.metrics = Metrics(data=sample)
             # Compute the returns of the strategy (on this specific dataset and with these parameters)
             self.BT.run()
 
@@ -335,9 +334,9 @@ class WalkForwardOptimization:
                     self.df_results[column].ewm(com=1.5, ignore_na=True).mean()
                 )
 
-                """"
-              Check on the extensiility of this piece of code 
-              using different smoothening techniques isnce we are only using numeric value
+            """"
+              Check on the extensibility of this piece of code 
+              using different smoothening techniques since we are only using numeric value
               
               # # Check if the column contains numeric values (either float or integer)
               # if np.issubdtype(self.df_results[column].dtype, np.number):
@@ -348,7 +347,7 @@ class WalkForwardOptimization:
               #     self.smooth_result[column] = self.df_results[column].mode().iloc[0]
               
               
-              """
+            """
 
             # Create a dictionary with the best params SMOOTHED by exponential mean or by the mode
             test_params = dict(self.smooth_result.iloc[-1, :-1])
@@ -404,13 +403,13 @@ class WalkForwardOptimization:
             # !! Here, we can call directly the model without run again the model because the optimal weights are
             # computed already and stored into the output dictionary and so in the self.best_params_smoothed list
             self.BT = Backtest(
-                data=test, TradingStrategy=self.TradingStrategy, parameters=params
+                data=test, TradingStrategy=self.TradingStrategy, parameters=params, initial_capital=10000
             )
             self.BT.run()
             df_test_result = pd.concat((df_test_result, self.BT.data), axis=0)
 
         # Print the backtest for the period following the walk-forward method
         self.BT = Backtest(
-            data=df_test_result, TradingStrategy=self.TradingStrategy, parameters=params
+            data=df_test_result, TradingStrategy=self.TradingStrategy, parameters=params, initial_capital=10000
         )
-        self.BT.display(self.title_graph)
+        self.BT.display_graphs(self.title_graph)
