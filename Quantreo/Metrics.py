@@ -31,7 +31,9 @@ class Metrics:
         self.return_over_period = self.calculate_return_over_period()
         self.buy_count = self.get_buy_count()
         self.sell_count = self.get_sell_count()
-        self.days, self.hours_left, self.minutes_left = self.calculate_average_trade_lifetime()
+        self.days, self.hours_left, self.minutes_left = (
+            self.calculate_average_trade_lifetime()
+        )
         self.dd_max = self.get_dd_max()
         self.hit = self.calculate_hit()
         self.rr_ratio = self.calculate_rr_ratio()
@@ -116,9 +118,7 @@ class Metrics:
 
     def calculate_pct_winning_month(self):
         sr = pd.Series(self.ben_month, name="returns")
-        return (
-            (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
-        )
+        return (1 - (len(sr[sr <= 0]) / len(sr))) * 100 if len(sr) > 0 else 0
 
     def calculate_sharpe_ratio(self):
         # Assuming 252 trading days in a year
@@ -189,7 +189,9 @@ class Metrics:
         print(
             f" Return (period): {'%.2f' % self.return_over_period}% \t\t\t\t Maximum drawdown: {'%.2f' % self.dd_max}%"
         )
-        print(f" HIT ratio: {'%.2f' % self.hit}% \t\t\t\t\t\t R ratio: {'%.2f' % self.rr_ratio}")
+        print(
+            f" HIT ratio: {'%.2f' % self.hit}% \t\t\t\t\t\t R ratio: {'%.2f' % self.rr_ratio}"
+        )
         print(
             f" Best month return: {'%.2f' % self.best_month_return}% \t\t\t\t Worse month return: {'%.2f' % self.worse_month_return}%"
         )
@@ -197,7 +199,8 @@ class Metrics:
             f" Average ret/month: {'%.2f' % self.cmgr}% \t\t\t\t Profitable months: {'%.2f' % self.pct_winning_month}%"
         )
         print(
-            f" Sharpe Ratio: {'%.2f' % self.sharpe_ratio} \t\t\t\t\t Streaks: {self.max_winning_streak, self.max_losing_streak}")
+            f" Sharpe Ratio: {'%.2f' % self.sharpe_ratio} \t\t\t\t\t Streaks: {self.max_winning_streak, self.max_losing_streak}"
+        )
         print(
             "------------------------------------------------------------------------------------------------------------------"
         )

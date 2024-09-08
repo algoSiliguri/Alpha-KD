@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 from Quantreo.Metrics import Metrics
 from Quantreo.MetricsUtility import MetricsUtility
 from Strategies.CciStrategy import CciStrategy
+from MarketDownRegimeAnalyzer.thresholdstrategy import CustomStrategy
 
 
 class Backtest:
@@ -55,8 +56,8 @@ class Backtest:
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
 
         self.data = data.loc[
-                    self.start_date_backtest:
-                    ].copy()  # Use .copy() to avoid SettingWithCopyWarning
+            self.start_date_backtest :
+        ].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Initialize columns if they don't exist
         for col in ["returns", "duration", "buy_count", "sell_count"]:
@@ -92,7 +93,7 @@ class Backtest:
             if position_return != 0:
                 self.data.loc[current_time, "returns"] = position_return
                 self.data.loc[current_time, "duration"] = (
-                        self.exit_trade_time - self.entry_trade_time
+                    self.exit_trade_time - self.entry_trade_time
                 ).total_seconds()
                 self.metricsUtility.construct_stock_data(position_return, self.entry_trade_time, self.exit_trade_time)
 
@@ -144,38 +145,29 @@ class Backtest:
 
 
 # Example Usage
-#
-# data = pd.read_csv('../Data/FixTimeBars/ADANI_ready.csv',index_col="time",
-#     parse_dates=True,)
-#
-# # Define strategy parameters
-# parameters = {
-#     "tp":0.02,
-#     "sl": -0.01,
-#     "fast_sma": 50,
-#     "slow_sma": 20,
-#     "rsi": 14,
-#     "cost": 0.0001,
-#     "leverage": 5
-# }
-#
-# # Initialize and run the backtest
-# backtest = Backtest(data, CciStrategy, parameters, run_directly=True, title="Cci Strategy Backtest")
-
 
 # Load data
-# data = pd.read_csv('../Upstox_Data/Create_Database/Nifty50_data/Daily/ADANIENT_Daily.csv', index_col="time",
-#                    parse_dates=True)
+data = pd.read_csv(
+    "../MarketDownRegimeAnalyzer/data.csv", index_col="time", parse_dates=True
+)
 
 # Filter data to include only the most recent two years
-# recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
+recent_two_years = data.loc[data.index >= (data.index.max() - pd.DateOffset(years=2))]
 
 # Define strategy parameters
-# parameters = {
-#     "cci_period": 20,  # Example value, adjust as needed
-#     "atr_period": 14,  # Example value, adjust as needed
-#     "atr_multiplier": 1.5,  # Example value, adjust as needed
-#     "cost": 10
-# }
+parameters = {
+    # "cci_period": 20,  # Example value, adjust as needed
+    "atr_period": 20,  # Example value, adjust as needed
+    "atr_multiplier": 2.5,  # Example value, adjust as needed
+    "cost": 0.01,
+}
+
 # Initialize and run the backtest
-# backtest = Backtest(data, CciStrategy, parameters, 10000, run_directly=True, title="Cci Strategy Backtest")
+backtest = Backtest(
+    data,
+    CustomStrategy,
+    parameters,
+    10000,
+    run_directly=True,
+    title="Threshold Strategy Backtest",
+)

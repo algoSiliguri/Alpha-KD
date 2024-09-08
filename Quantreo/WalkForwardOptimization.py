@@ -50,16 +50,16 @@ class WalkForwardOptimization:
     """
 
     def __init__(
-            self,
-            data,
-            TradingStrategy,
-            fixed_parameters,
-            parameters_range,
-            length_train_set=10_000,
-            pct_train_set=0.80,
-            anchored=True,
-            title=None,
-            randomness=0.75,
+        self,
+        data,
+        TradingStrategy,
+        fixed_parameters,
+        parameters_range,
+        length_train_set=10_000,
+        pct_train_set=0.80,
+        anchored=True,
+        title=None,
+        randomness=0.75,
     ):
         # Set initial parameters
         self.data = data
@@ -140,7 +140,7 @@ class WalkForwardOptimization:
 
             # Run the optimization
             for self.train_sample, self.test_sample in tqdm(
-                    zip(self.train_samples, self.test_samples)
+                zip(self.train_samples, self.test_samples)
             ):
                 self.get_best_params_train_set()
                 self.test_best_params()
@@ -191,24 +191,24 @@ class WalkForwardOptimization:
                 if self.anchored:
                     self.train_samples.append(self.data.iloc[: end - length_test, :])
                     self.test_samples.append(
-                        self.data.iloc[end - length_test: len(self.data), :]
+                        self.data.iloc[end - length_test : len(self.data), :]
                     )
                 else:
                     self.train_samples.append(
-                        self.data.iloc[start: end - length_test, :]
+                        self.data.iloc[start : end - length_test, :]
                     )
                     self.test_samples.append(
-                        self.data.iloc[end - length_test: len(self.data), :]
+                        self.data.iloc[end - length_test : len(self.data), :]
                     )
                 break
 
             # Fill the samples list depending on if there are anchored or not
             if self.anchored:
                 self.train_samples.append(self.data.iloc[: end - length_test, :])
-                self.test_samples.append(self.data.iloc[end - length_test: end, :])
+                self.test_samples.append(self.data.iloc[end - length_test : end, :])
             else:
-                self.train_samples.append(self.data.iloc[start: end - length_test, :])
-                self.test_samples.append(self.data.iloc[end - length_test: end, :])
+                self.train_samples.append(self.data.iloc[start : end - length_test, :])
+                self.test_samples.append(self.data.iloc[end - length_test : end, :])
 
             start += length_test
 
@@ -229,9 +229,9 @@ class WalkForwardOptimization:
             storage_values_params = []
 
             for self.params_item in np.random.choice(
-                    self.dictionaries,
-                    size=int(len(self.dictionaries) * self.randomness),
-                    replace=False,
+                self.dictionaries,
+                size=int(len(self.dictionaries) * self.randomness),
+                replace=False,
             ):
                 # Extract the variable parameters from the dictionary
                 current_params = [

@@ -21,3 +21,7 @@ tqdm==4.65.0
 wincertstore==0.2
 seaborn
 requests
+upstox-python-sdk
+PyWavelets
+hmmlearn
+statsmodels
