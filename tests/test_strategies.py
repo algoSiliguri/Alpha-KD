@@ -57,3 +57,10 @@ def test_rsi_sma_exit_signal(sample_data, params):
     time = sample_data.index[50]
     ret, exit_time = strategy.get_exit_signal(time)
     assert isinstance(ret, (int, float))
+
+
+def test_get_state_returns_dict(sample_data, params):
+    strategy = RsiSma(sample_data, params)
+    state = strategy.get_state()
+    assert set(state.keys()) == {"side", "entry_price", "unrealized_pnl", "signal", "timestamp"}
+    assert state["side"] in ("buy", "sell", "flat")
