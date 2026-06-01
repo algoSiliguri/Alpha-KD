@@ -79,6 +79,41 @@ refactor: code restructuring with no behavior change
 - ❌ Bulk commits
 - ❌ Modifying `AGENTS.md`
 
+### Pre-Push Self-Certification
+
+Before pushing any commit, run the checks below locally and paste the results into the PR description under `## Self-Certification`.
+
+> Full protocol: `docs/ADRs/ADR-002-cost-optimized-review-protocol.md`
+
+```markdown
+## Self-Certification
+
+- [ ] `pytest` passes locally
+- [ ] `pip install -e ".[dev]"` succeeds in a clean venv
+- [ ] Zero `import *` in new/modified files
+- [ ] Zero hardcoded secrets
+- [ ] No new monolithic files (>300 lines without ADR justification)
+- [ ] Commit messages follow convention
+- [ ] Plan deviation noted (if any) with one-sentence justification
+```
+
+Quick commands:
+```bash
+# Clean build + test
+python -m venv /tmp/alpha-kd-clean-venv
+source /tmp/alpha-kd-clean-venv/bin/activate
+pip install -e ".[dev]"
+pytest -q
+
+# Import hygiene
+grep -r "from .* import \*" alpha_kd/ tests/ || echo "No wildcard imports found."
+
+# Secret hygiene
+grep -riE "(password|secret|api_key|token)" alpha_kd/ tests/ || echo "No obvious secrets found."
+```
+
+**Rule:** If any checkbox is unchecked, do not push. Fix it first.
+
 ## Imports
 @.claude/rules/python-style.md
 @.claude/rules/security.md

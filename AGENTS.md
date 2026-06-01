@@ -69,6 +69,27 @@ Your work is done until:
 
 ---
 
+## Tiered Review Protocol
+
+Hermes does **not** read every line on every PR. Select a tier based on blast radius and CI status.
+
+> Full protocol: `docs/ADRs/ADR-002-cost-optimized-review-protocol.md`
+
+| Condition | Tier | Action | Estimated Tokens |
+|:---|:---|:---|:---|
+| Only `docs/` or `tests/` changed; CI green | **Tier 0 — Trust** | Approve without reading code | ~0 |
+| ≤5 files changed; no new domains; CI green | **Tier 1 — Spot-check** | Read diff summary only. Spot-check 1 high-risk file. | ~2k |
+| >5 files OR new domain OR changes `pyproject.toml` / `AGENTS.md` / `CLAUDE.md` | **Tier 2 — Focused audit** | Read diff + all changed files. Verify plan fidelity. | ~8k |
+| First PR of a new Phase OR refactor >10 legacy files OR security-related | **Tier 3 — Full audit** | Full line-by-line read + local test run + narrative report. | ~25k+ |
+
+### Hard Rules for All Tiers
+
+- **Red CI = no review.** If the CI gate is failing, post `"Fix CI, then I'll review."` and stop.
+- **Spot-check priority:** (1) `config.py` / `.env.example`, (2) largest diff file, (3) new `__init__.py`.
+- **Verdict limit:** All reviews must fit in ≤5 bullets. Narrative reports are reserved for Tier 3 only.
+
+---
+
 ## Communication Style
 
 - **With User (Telegram):** Concise, strategic, no code dumps. Use bullet points and plain English.
