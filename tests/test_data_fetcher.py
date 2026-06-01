@@ -2,7 +2,6 @@ import tempfile
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from alpha_kd.data_fetcher import YahooFinanceFetcher
 
