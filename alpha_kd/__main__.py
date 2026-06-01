@@ -28,8 +28,33 @@ def main():
             print("No telemetry records found.")
 
     if args.backtest:
-        print("Backtest telemetry mode — not yet wired to live data.")
-        print("Use BacktestTelemetry(adapter) in scripts for now.")
+        from alpha_kd.backtest_telemetry import BacktestTelemetry
+        from alpha_kd.data_fetcher import YahooFinanceFetcher
+        from alpha_kd.strategies.rsi_sma_regime import RsiSmaRegime
+
+        symbol = "AAPL"
+        fetcher = YahooFinanceFetcher()
+        df = fetcher.fetch(symbol, period="5d", interval="1h")
+        params = {
+            "fast_sma": 10,
+            "slow_sma": 20,
+            "rsi": 14,
+            "tp": 0.01,
+            "sl": -0.01,
+            "cost": 0.0001,
+            "leverage": 1,
+        }
+        bt = BacktestTelemetry(
+            df,
+            RsiSmaRegime,
+            params,
+            telemetry_path=args.telemetry_path,
+        )
+        bt.run()
+        records = bt.buffer.tail(1)
+        print(f"Backtest complete: {len(df)} bars")
+        if records:
+            print(f"Last state: {records[0]}")
 
 
 if __name__ == "__main__":
