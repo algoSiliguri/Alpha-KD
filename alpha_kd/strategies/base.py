@@ -19,6 +19,16 @@ class Strategy(ABC):
         self.entry_time: Optional[pd.Timestamp] = None
         self.exit_time: Optional[pd.Timestamp] = None
 
+    def get_state(self) -> dict:
+        """Return a serializable snapshot of strategy state."""
+        return {
+            "side": "buy" if self.buy else ("sell" if self.sell else "flat"),
+            "entry_price": self.open_buy_price if self.buy else (self.open_sell_price if self.sell else None),
+            "unrealized_pnl": None,
+            "signal": 0,
+            "timestamp": None,
+        }
+
     @abstractmethod
     def get_features(self) -> None:
         """Compute technical indicators and signal columns on self.data."""
