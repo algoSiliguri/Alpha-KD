@@ -1,4 +1,4 @@
-"""CLI entrypoint: python -m alpha_kd --state"""
+"""CLI entrypoint: python -m alpha_kd --state|--backtest"""
 import argparse
 import json
 from pathlib import Path
@@ -11,6 +11,11 @@ def main():
     parser.add_argument(
         "--state", action="store_true", help="Print latest telemetry entry"
     )
+    parser.add_argument(
+        "--backtest",
+        action="store_true",
+        help="Run a minimal backtest and print telemetry summary",
+    )
     parser.add_argument("--telemetry-path", type=Path, default=Path("telemetry.jsonl"))
     args = parser.parse_args()
 
@@ -21,6 +26,10 @@ def main():
             print(json.dumps(records[0], indent=2))
         else:
             print("No telemetry records found.")
+
+    if args.backtest:
+        print("Backtest telemetry mode — not yet wired to live data.")
+        print("Use BacktestTelemetry(adapter) in scripts for now.")
 
 
 if __name__ == "__main__":
