@@ -152,3 +152,6 @@ dmypy.json
 # System files
 .DS_Store
 Thumbs.db
+
+# Lock files
+uv.lock
