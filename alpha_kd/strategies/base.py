@@ -23,7 +23,11 @@ class Strategy(ABC):
         """Return a serializable snapshot of strategy state."""
         return {
             "side": "buy" if self.buy else ("sell" if self.sell else "flat"),
-            "entry_price": self.open_buy_price if self.buy else (self.open_sell_price if self.sell else None),
+            "entry_price": (
+                self.open_buy_price
+                if self.buy
+                else (self.open_sell_price if self.sell else None)
+            ),
             "unrealized_pnl": None,
             "signal": 0,
             "timestamp": None,
@@ -35,11 +39,15 @@ class Strategy(ABC):
         ...
 
     @abstractmethod
-    def get_entry_signal(self, time: pd.Timestamp) -> Tuple[int, Optional[pd.Timestamp]]:
+    def get_entry_signal(  # noqa: E501
+        self, time: pd.Timestamp
+    ) -> Tuple[int, Optional[pd.Timestamp]]:
         """Return entry signal (-1, 0, 1) and entry time."""
         ...
 
     @abstractmethod
-    def get_exit_signal(self, time: pd.Timestamp) -> Tuple[float, Optional[pd.Timestamp]]:
+    def get_exit_signal(  # noqa: E501
+        self, time: pd.Timestamp
+    ) -> Tuple[float, Optional[pd.Timestamp]]:
         """Return position return and exit time if closing."""
         ...
