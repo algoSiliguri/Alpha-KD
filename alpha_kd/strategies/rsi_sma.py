@@ -137,6 +137,7 @@ class RsiSma(Strategy):
                 return (self.sl - self.cost) * self.leverage, self.exit_time
 
         return 0.0, None
+
     def get_state(self) -> dict:
         state = super().get_state()
         last_close = self.data.loc[self.data.index[-1], "close"]
