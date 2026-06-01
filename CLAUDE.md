@@ -88,31 +88,44 @@ Before pushing any commit, run the checks below locally and paste the results in
 ```markdown
 ## Self-Certification
 
-- [ ] `pytest` passes locally
-- [ ] `pip install -e ".[dev]"` succeeds in a clean venv
+- [ ] `pytest -q` passes locally
+- [ ] `ruff check alpha_kd/ tests/ --select E,W,F` passes (zero errors)
+- [ ] Zero lines >88 characters in `alpha_kd/` and `tests/`
 - [ ] Zero `import *` in new/modified files
 - [ ] Zero hardcoded secrets
-- [ ] No new monolithic files (>300 lines without ADR justification)
+- [ ] No new monolithic files (>150 lines without ADR justification)
 - [ ] Commit messages follow convention
 - [ ] Plan deviation noted (if any) with one-sentence justification
 ```
 
 Quick commands:
 ```bash
-# Clean build + test
+# 1. Clean build + test
 python -m venv /tmp/alpha-kd-clean-venv
 source /tmp/alpha-kd-clean-venv/bin/activate
 pip install -e ".[dev]"
 pytest -q
 
-# Import hygiene
+# 2. Lint (MUST match CI gate exactly)
+pip install ruff
+ruff check alpha_kd/ tests/ --select E,W,F
+
+# 3. Line-length check (MUST be zero output)
+for f in alpha_kd/*.py alpha_kd/**/*.py tests/*.py; do
+  awk -v f="$f" '{if (length > 88) print f ":" NR ": " length " chars"}' "$f"
+done
+
+# 4. Import hygiene
 grep -r "from .* import \*" alpha_kd/ tests/ || echo "No wildcard imports found."
 
-# Secret hygiene
+# 5. Secret hygiene
 grep -riE "(password|secret|api_key|token)" alpha_kd/ tests/ || echo "No obvious secrets found."
+
+# 6. File size check (no file >150 lines)
+find alpha_kd/ tests/ -name "*.py" -exec wc -l {} + | awk '$1 > 150 {print "OVERSIZE: " $2 " (" $1 " lines)"}'
 ```
 
-**Rule:** If any checkbox is unchecked, do not push. Fix it first.
+**Rule: If any step produces non-empty output, do not push. Fix it first.**
 
 ## Imports
 @.claude/rules/python-style.md
