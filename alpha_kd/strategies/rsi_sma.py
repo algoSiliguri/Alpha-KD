@@ -1,5 +1,4 @@
-"""
-RSI + SMA divergence strategy.
+"""RSI + SMA divergence strategy.
 
 Logic: trade divergence between SMA trend direction and RSI momentum direction.
 Buy when SMAs show downtrend but RSI momentum turns up; sell for the inverse.
@@ -138,15 +137,13 @@ class RsiSma(Strategy):
                 return (self.sl - self.cost) * self.leverage, self.exit_time
 
         return 0.0, None
-
     def get_state(self) -> dict:
         state = super().get_state()
+        last_close = self.data.loc[self.data.index[-1], "close"]
         if self.buy and self.open_buy_price:
-            last_close = self.data.loc[self.data.index[-1], "close"]
             state["unrealized_pnl"] = (last_close - self.open_buy_price) / self.open_buy_price
             state["signal"] = 1
         elif self.sell and self.open_sell_price:
-            last_close = self.data.loc[self.data.index[-1], "close"]
             state["unrealized_pnl"] = (self.open_sell_price - last_close) / self.open_sell_price
             state["signal"] = -1
         state["timestamp"] = str(self.data.index[-1])
