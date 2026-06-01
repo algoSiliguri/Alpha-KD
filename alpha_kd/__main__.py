@@ -8,7 +8,9 @@ from alpha_kd.telemetry import TelemetryBuffer
 
 def main():
     parser = argparse.ArgumentParser(description="Alpha-KD CLI")
-    parser.add_argument("--state", action="store_true", help="Print latest telemetry entry")
+    parser.add_argument(
+        "--state", action="store_true", help="Print latest telemetry entry"
+    )
     parser.add_argument("--telemetry-path", type=Path, default=Path("telemetry.jsonl"))
     args = parser.parse_args()
 

@@ -7,7 +7,13 @@ except (ImportError, Exception):
 
 
 class RegimeMixin:
-    def __init__(self, *args, regime_model_type: str = "markov", regime_params: dict = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        regime_model_type: str = "markov",
+        regime_params: dict = None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.current_regime: str = "unavailable"
         if _REGIME_AVAILABLE:
