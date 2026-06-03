@@ -19,7 +19,7 @@ class Strategy(ABC):
         self.entry_time: Optional[pd.Timestamp] = None
         self.exit_time: Optional[pd.Timestamp] = None
 
-    def get_state(self) -> dict:
+    def get_state(self, time: Optional[pd.Timestamp] = None) -> dict:
         """Return a serializable snapshot of strategy state."""
         return {
             "side": "buy" if self.buy else ("sell" if self.sell else "flat"),
@@ -30,7 +30,7 @@ class Strategy(ABC):
             ),
             "unrealized_pnl": None,
             "signal": 0,
-            "timestamp": None,
+            "timestamp": str(time) if time is not None else None,
         }
 
     @abstractmethod

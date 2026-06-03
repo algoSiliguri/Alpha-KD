@@ -39,7 +39,7 @@ class RsiSmaRegime(RsiSma):
         except Exception:
             self.regime_label = "unknown"
 
-    def get_state(self) -> dict:
-        state = super().get_state()
+    def get_state(self, time=None) -> dict:
+        state = super().get_state(time)
         state["regime"] = self.regime_label
         return state

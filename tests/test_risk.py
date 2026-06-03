@@ -3,6 +3,7 @@ from alpha_kd.risk.kelly import calculate_kelly_fraction
 
 
 def test_drawdown_breaker_halt():
+    DrawdownBreaker.reset_global_halt()
     breaker = DrawdownBreaker(limit=0.10, initial_value=100.0)
     assert not breaker.is_halted
     assert not breaker.update(95.0)
@@ -29,3 +30,21 @@ def test_kelly_fraction():
 
     # negative win/loss ratio should return 0
     assert calculate_kelly_fraction(p=0.5, b=-1.0) == 0.0
+
+
+def test_drawdown_breaker_force_halt_all():
+    DrawdownBreaker.reset_global_halt()
+    b1 = DrawdownBreaker(limit=0.10, initial_value=100.0)
+    b2 = DrawdownBreaker(limit=0.15, initial_value=200.0)
+
+    assert not b1.is_halted
+    assert not b2.is_halted
+
+    DrawdownBreaker.force_halt_all()
+
+    assert b1.is_halted
+    assert b2.is_halted
+
+    DrawdownBreaker.reset_global_halt()
+    assert not b1.is_halted
+    assert not b2.is_halted
