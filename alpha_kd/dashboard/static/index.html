@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpha-KD Telemetry Dashboard</title>
+    <title>Alpha-KD Portfolio Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="background-decor"></div>
     <div class="dashboard-container">
         <header>
-            <h1>Alpha-KD <span>Telemetry</span></h1>
+            <h1>Alpha-KD <span>Portfolio</span></h1>
             <div class="status-indicator">
                 <span class="pulse"></span> LIVE MONITOR
             </div>
@@ -19,28 +20,23 @@
 
         <main class="grid-layout">
             <section class="card glass">
-                <h2>Strategy Status</h2>
-                <div class="metric-group">
-                    <div class="metric"><span class="label">Side</span><span id="strategy-side" class="value">FLAT</span></div>
-                    <div class="metric"><span class="label">Entry Price</span><span id="entry-price" class="value">-</span></div>
-                    <div class="metric"><span class="label">Unrealized PnL</span><span id="unrealized-pnl" class="value">-</span></div>
-                </div>
-            </section>
-
-            <section class="card glass">
                 <h2>Drawdown Tracker</h2>
                 <div class="metric-group">
+                    <div class="metric"><span class="label">Aggregate Equity</span><span id="agg-equity" class="value">-</span></div>
                     <div class="metric"><span class="label">Current DD</span><span id="current-drawdown" class="value">0.00%</span></div>
-                    <div class="metric"><span class="label">Peak Value</span><span id="peak-value" class="value">-</span></div>
                     <div class="metric"><span class="label">Breaker Status</span><span id="breaker-status" class="value status-ok">ACTIVE</span></div>
                 </div>
             </section>
 
-            <section class="card glass">
-                <h2>Kelly Sizing Monitor</h2>
-                <div class="metric-group">
-                    <div class="metric"><span class="label">Fractional Kelly</span><span id="kelly-size" class="value">0.00%</span></div>
-                    <div class="metric"><span class="label">Trade Status</span><span id="trade-status" class="value">NORMAL</span></div>
+            <section class="card glass col-span-full">
+                <h2>Assets Monitor</h2>
+                <div id="ticker-cards" class="ticker-grid"></div>
+            </section>
+
+            <section class="card glass col-span-full">
+                <h2>Aggregate Equity Curve</h2>
+                <div class="chart-container">
+                    <canvas id="equity-chart" height="100"></canvas>
                 </div>
             </section>
 
