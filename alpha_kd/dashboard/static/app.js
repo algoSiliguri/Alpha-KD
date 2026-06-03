@@ -1,16 +1,11 @@
-let equityChart = null;
+let equityChart = null, currentMode = null, currentAction = null, isLoading = false;
 
-function formatPnL(pnl) {
-    if (pnl === null || pnl === undefined) return "-";
-    const percent = (pnl * 100).toFixed(2) + "%";
-    return pnl >= 0 ? "+" + percent : percent;
-}
+const formatPnL = pnl => (pnl === null || pnl === undefined) ? "-" : (pnl >= 0 ? "+" : "") + (pnl * 100).toFixed(2) + "%";
 
 function updateChart(logs) {
     const ctx = document.getElementById("equity-chart").getContext("2d");
-    const labels = logs.map(log => log.bar_time || log.timestamp || "");
-    const data = logs.map(log => log.equity || 0);
-
+    const labels = logs.map(l => l.bar_time || l.timestamp || "");
+    const data = logs.map(l => l.equity || 0);
     if (equityChart) {
         equityChart.data.labels = labels;
         equityChart.data.datasets[0].data = data;
@@ -19,77 +14,93 @@ function updateChart(logs) {
         equityChart = new Chart(ctx, {
             type: "line",
             data: {
-                labels: labels,
-                datasets: [{
-                    label: "Portfolio Equity",
-                    data: data,
-                    borderColor: "#3b82f6",
-                    backgroundColor: "rgba(59, 130, 246, 0.1)",
-                    fill: true,
-                    tension: 0.1
-                }]
+                labels,
+                datasets: [{ label: "Portfolio Equity", data, borderColor: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.1)", fill: true, tension: 0.1 }]
             },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { display: false },
-                    y: { grid: { color: "rgba(255, 255, 255, 0.05)" } }
-                }
-            }
+            options: { responsive: true, scales: { x: { display: false }, y: { grid: { color: "rgba(255, 255, 255, 0.05)" } } } }
         });
     }
 }
 
-function updateUI(logs) {
-    if (!logs || logs.length === 0) return;
+function sendControl(mode, action) {
+    const payload = {};
+    if (mode) payload.mode = mode;
+    if (action) payload.action = action;
+    fetch("/api/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(data => { if (data.status === "ok") syncControlUI(data.control); })
+        .catch(err => console.error("Error updating control:", err));
+}
+
+function syncControlUI(ctrl) {
+    currentMode = ctrl.mode; currentAction = ctrl.action; isLoading = ctrl.loading;
+    const select = document.getElementById("mode-select");
+    if (select.value !== currentMode) select.value = currentMode;
+
+    document.getElementById("btn-start").classList.toggle("active", currentAction === "start");
+    document.getElementById("btn-pause").classList.toggle("active", currentAction === "pause");
+    document.getElementById("btn-halt").classList.toggle("active", currentAction === "halt");
+
+    const indicator = document.getElementById("status-indicator");
+    const txt = document.getElementById("status-text");
+    const isHalt = currentAction === "halt";
+
+    if (isLoading) {
+        indicator.className = "status-indicator status-loading";
+        txt.textContent = "STATUS: LOADING";
+    } else {
+        indicator.className = "status-indicator";
+        txt.textContent = isHalt ? "HALTED" : "LIVE MONITOR";
+    }
+
+    select.disabled = isLoading || isHalt;
+    document.getElementById("btn-start").disabled = isLoading || isHalt;
+    document.getElementById("btn-pause").disabled = isLoading || isHalt;
+    document.getElementById("btn-halt").disabled = isHalt;
+}
+
+function updateUI(data) {
+    const logs = data.logs || [];
+    syncControlUI(data);
+    if (!logs.length) return;
     const latest = logs[logs.length - 1];
 
     document.getElementById("agg-equity").textContent = latest.equity ? "$" + latest.equity.toFixed(2) : "-";
-    const dd = (latest.drawdown || 0.0) * 100;
-    document.getElementById("current-drawdown").textContent = dd.toFixed(2) + "%";
+    document.getElementById("current-drawdown").textContent = ((latest.drawdown || 0) * 100).toFixed(2) + "%";
 
     const breaker = document.getElementById("breaker-status");
-    if (latest.is_halted) {
-        breaker.textContent = "HALTED";
-        breaker.className = "value status-halted";
-    } else {
-        breaker.textContent = "ACTIVE";
-        breaker.className = "value status-ok";
-    }
+    const halted = latest.is_halted || currentAction === "halt";
+    breaker.textContent = halted ? "HALTED" : "ACTIVE";
+    breaker.className = "value " + (halted ? "status-halted" : "status-ok");
 
-    // Update ticker cards
     const container = document.getElementById("ticker-cards");
     container.innerHTML = "";
     if (latest.tickers) {
         Object.entries(latest.tickers).forEach(([sym, t]) => {
             const card = document.createElement("div");
             card.className = "ticker-card";
-            card.innerHTML = `
-                <h3>${sym}</h3>
+            card.innerHTML = `<h3>${sym}</h3>
                 <div class="metric"><span class="label">Side</span><span class="value">${(t.side || "flat").toUpperCase()}</span></div>
                 <div class="metric"><span class="label">Entry</span><span class="value">${t.entry_price ? t.entry_price.toFixed(2) : "-"}</span></div>
                 <div class="metric"><span class="label">PnL</span><span class="value">${formatPnL(t.unrealized_pnl)}</span></div>
                 <div class="metric"><span class="label">Kelly</span><span class="value">${((t.kelly_size || 0)*100).toFixed(1)}%</span></div>
-                <div class="metric"><span class="label">Equity</span><span class="value">$${(t.equity || 0).toFixed(0)}</span></div>
-            `;
+                <div class="metric"><span class="label">Equity</span><span class="value">$${(t.equity || 0).toFixed(0)}</span></div>`;
             container.appendChild(card);
         });
     }
 
-    // Update terminal view
     const terminal = document.getElementById("terminal");
     terminal.innerHTML = "";
     logs.forEach(log => {
         const line = document.createElement("div");
         line.className = "terminal-line";
         const ts = log.bar_time || log.timestamp || "unknown";
-        const ddPct = ((log.drawdown || 0) * 100).toFixed(2);
-        line.textContent = `[${ts}] Equity: $${(log.equity || 0).toFixed(2)} | DD: ${ddPct}% | Halted: ${log.is_halted}`;
-        if (log.is_halted) line.style.color = "var(--danger)";
+        const isH = log.is_halted || currentAction === 'halt';
+        line.textContent = `[${ts}] Equity: $${(log.equity || 0).toFixed(2)} | DD: ${((log.drawdown || 0) * 100).toFixed(2)}% | Halted: ${isH}`;
+        if (isH) line.style.color = "var(--danger)";
         terminal.appendChild(line);
     });
     terminal.scrollTop = terminal.scrollHeight;
-
     updateChart(logs);
 }
 
@@ -99,6 +110,13 @@ function fetchTelemetry() {
         .then(data => updateUI(data))
         .catch(err => console.error("Error fetching telemetry:", err));
 }
+
+document.getElementById("mode-select").addEventListener("change", e => sendControl(e.target.value, null));
+document.getElementById("btn-start").addEventListener("click", () => sendControl(null, "start"));
+document.getElementById("btn-pause").addEventListener("click", () => sendControl(null, "pause"));
+document.getElementById("btn-halt").addEventListener("click", () => {
+    if (confirm("Are you sure you want to FORCE HALT all execution?")) sendControl(null, "halt");
+});
 
 setInterval(fetchTelemetry, 1000);
 fetchTelemetry();
