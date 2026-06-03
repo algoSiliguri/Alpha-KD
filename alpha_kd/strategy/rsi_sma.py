@@ -105,7 +105,12 @@ class RsiSma(Strategy):
 
     def get_state(self, time=None) -> dict:
         state = super().get_state(time)
-        last_close = self.data.loc[time if (time is not None and time in self.data.index) else self.data.index[-1], "close"]
+        t = (
+            time
+            if (time is not None and time in self.data.index)
+            else self.data.index[-1]
+        )
+        last_close = self.data.loc[t, "close"]
         if self.buy and self.open_buy_price:
             state["unrealized_pnl"] = (
                 (last_close - self.open_buy_price) / self.open_buy_price
@@ -116,5 +121,5 @@ class RsiSma(Strategy):
                 (self.open_sell_price - last_close) / self.open_sell_price
             )
             state["signal"] = -1
-        state["timestamp"] = str(time if (time is not None and time in self.data.index) else self.data.index[-1])
+        state["timestamp"] = str(t)
         return state
