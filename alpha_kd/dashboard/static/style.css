@@ -129,23 +129,7 @@ h2 {
 .status-ok { color: var(--success) !important; }
 
 /* Multi-ticker UI */
-.ticker-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-}
-.ticker-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 1rem;
-}
-.ticker-card h3 {
-    margin: 0 0 0.8rem 0;
-    font-size: 1.1rem;
-    color: var(--accent);
-}
-.chart-container {
-    position: relative;
-    width: 100%;
-}
+.ticker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.ticker-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1rem; }
+.ticker-card h3 { margin: 0 0 0.8rem 0; font-size: 1.1rem; color: var(--accent); }
+.chart-container { position: relative; width: 100%; }

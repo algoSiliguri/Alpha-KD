@@ -33,11 +33,25 @@ class DummyStrategy(Strategy):
 
 
 def test_multi_ticker_alignment_and_drawdown(tmp_path):
-    idx1 = pd.to_datetime(["2026-06-01 10:00:00", "2026-06-01 11:00:00", "2026-06-01 12:00:00"])
-    idx2 = pd.to_datetime(["2026-06-01 10:30:00", "2026-06-01 11:00:00", "2026-06-01 13:00:00"])
+    idx1 = pd.to_datetime([
+        "2026-06-01 10:00:00",
+        "2026-06-01 11:00:00",
+        "2026-06-01 12:00:00"
+    ])
+    idx2 = pd.to_datetime([
+        "2026-06-01 10:30:00",
+        "2026-06-01 11:00:00",
+        "2026-06-01 13:00:00"
+    ])
 
-    df1 = pd.DataFrame({"open": [100, 100, 100], "exit_ret": [0.0, -0.25, 0.0]}, index=idx1)
-    df2 = pd.DataFrame({"open": [100, 100, 100], "exit_ret": [0.0, 0.0, 0.0]}, index=idx2)
+    df1 = pd.DataFrame(
+        {"open": [100, 100, 100], "exit_ret": [0.0, -0.25, 0.0]},
+        index=idx1
+    )
+    df2 = pd.DataFrame(
+        {"open": [100, 100, 100], "exit_ret": [0.0, 0.0, 0.0]},
+        index=idx2
+    )
 
     data = {"T1": df1, "T2": df2}
     telemetry_file = tmp_path / "test_telemetry.jsonl"
