@@ -4,8 +4,8 @@
 > **Phase:** P6 (Control & Horizons)  
 > **Branch:** `feature/P6-control-hub`  
 > **Agent:** Claude Code  
-> **Estimated Time:** ~35 minutes  
-> **Goal:** Evolve the Alpha-KD dashboard into a unified glassmorphic Control Hub that allows dynamic switching between Historical Backtest, Forward Test, and Paper Trading, with a tactile Start/Pause stream control and an instant FORCE HALT circuit breaker.
+> **Estimated Time:** ~45 minutes  
+> **Goal:** Evolve the Alpha-KD dashboard into a unified glassmorphic Control Hub that allows dynamic switching between Historical Backtest, Forward Test, and Paper Trading, with a tactile Start/Pause stream control, loading state telemetry during fetching, and an instant FORCE HALT circuit breaker.
 
 ---
 
@@ -13,24 +13,25 @@
 
 We need to transition the Alpha-KD platform from a purely passive backtest/portfolio viewer to an interactive Single-Platform Control Hub.
 Our execution is constrained by:
-1. MAX LINE COUNT: No single file may exceed 150 lines of code.
-2. RISK CONTROLS: The FORCE HALT button must instantly halt all streams by flipping the `is_halted = True` circuit breaker state in `breaker.py`.
-3. STATE TRANSITIONS: Standard library utilities only (e.g., `threading.Lock`, `http.server`, etc.).
-4. VERIFICATION: Pytest suite must remain 100% green and no files should exceed the 150-line boundary.
+1. **MAX LINE COUNT:** No single file may exceed 150 lines of code. To prevent `__main__.py` bloat, all data-fetching and timeline re-initialization logic is offloaded to a clean helper in `alpha_kd/data/loader.py`, keeping the main orchestration loop under 80 lines.
+2. **NETWORK ROBUSTNESS:** Because `urllib.request` is synchronous, transitions between modes can block. We implement a `status: loading` flag in our shared control state to notify the dashboard UI and keep the rendering loop smooth.
+3. **RISK CONTROLS:** The FORCE HALT button must instantly halt all streams by flipping the `is_halted = True` circuit breaker state in `breaker.py`.
+4. **STATE TRANSITIONS:** Standard library utilities only (e.g., `threading.Lock`, `http.server`, etc.).
+5. **VERIFICATION:** Pytest suite must remain 100% green and no files should exceed the 150-line boundary.
 
 ---
 
 ## Execution Checklist
 
 ### Task 1: Add Shared Control State Module
-**Objective:** Add `alpha_kd/dashboard/control_state.py` to hold the thread-safe global control state (dropdown execution mode and streaming action) and handle FORCE HALT by setting the circuit breaker's class-level halt state.
+**Objective:** Add `alpha_kd/dashboard/control_state.py` to hold the thread-safe global control state (dropdown execution mode, streaming action, and loading state) and handle FORCE HALT by setting the circuit breaker's class-level halt state.
 
 **Files:**
 - Create: `alpha_kd/dashboard/control_state.py`
 
 **Details:**
 - Implement thread-safe control state using standard library `threading.Lock`.
-- Provide functions to update and retrieve mode ('Historical Backtest', 'Forward Test (Simulated Live)', 'Paper Trading (Real-Time Live)') and action ('start', 'pause', 'halt').
+- Provide functions to update and retrieve mode ('Historical Backtest', 'Forward Test (Simulated Live)', 'Paper Trading (Real-Time Live)'), action ('start', 'pause', 'halt'), and loading status (boolean).
 - If action is `'halt'`, call `DrawdownBreaker.force_halt_all()`.
 
 **Verification:**
@@ -84,29 +85,48 @@ pytest tests/test_portfolio.py tests/test_backtest_telemetry.py -v
 
 ---
 
-### Task 4: Implement Dynamic Background Execution Loop
-**Objective:** Refactor `alpha_kd/__main__.py` to support dynamic execution loops.
+### Task 4: Create Data Loader Helper for Horizon Mode Initialization
+**Objective:** Implement the ticker re-fetching and timeline re-initialization helper in `alpha_kd/data/loader.py` to avoid line bloat in `__main__.py` and safely manage the `loading` flag.
+
+**Files:**
+- Create: `alpha_kd/data/loader.py`
+
+**Details:**
+- Implement `init_horizon_telemetry(mode: str, symbols: list, path: Path)` helper.
+- Update the shared control state's `loading` flag to `True` before fetching, and to `False` once loaded.
+- Fetch data corresponding to the selected mode (Historical: 1mo/1h, Forward: 5d/1h, Paper: 1d/1h) using `YahooFinanceFetcher`.
+- Return the initialized `BacktestTelemetry` instance.
+
+**Verification:**
+```bash
+python3 -c "from alpha_kd.data.loader import init_horizon_telemetry; print('Loader utility verified')"
+```
+
+**Commit:** `feat: implement data loader utility for mode transitions`
+
+---
+
+### Task 5: Refactor Dynamic Background Execution Loop in CLI
+**Objective:** Refactor `alpha_kd/__main__.py` to run the background simulator loop, delegating initialization to the loader utility to keep `__main__.py` under 150 lines and the loop under 80 lines of pure routing.
 
 **Files:**
 - Modify: `alpha_kd/__main__.py`
 
 **Details:**
-- Change `run_simulation` to run a continuous dynamic loop.
-- Poll the shared control state:
-  - If action is `'pause'`, sleep.
-  - If mode changes, clear the telemetry file, re-fetch Yahoo Finance data (Historical: 1mo/1h, Forward: 5d/1h, Paper: 1d/1h), re-initialize the `BacktestTelemetry` instance, and reset the bar counter.
-  - If action is `'start'`, step one bar and sleep (Historical: 0.05s, Forward: 0.5s, Paper: 2.0s).
+- Poll control state: if `'pause'`, sleep.
+- If mode changes, call `init_horizon_telemetry` to reset the engine state and data stream.
+- If `'start'`, step one bar and sleep (Historical: 0.05s, Forward: 0.5s, Paper: 2.0s).
 
 **Verification:**
 ```bash
-python3 -c "from alpha_kd.__main__ import run_simulation; print('Engine imports verified')"
+python3 -c "from alpha_kd.__main__ import run_simulation; print('CLI entrypoint imported')"
 ```
 
-**Commit:** `feat: implement dynamic execution loop driven by control state`
+**Commit:** `feat: implement main dynamic execution loop under 80 lines`
 
 ---
 
-### Task 5: Implement Web Server POST Endpoint for Control Panel
+### Task 6: Implement Web Server POST Endpoint for Control Panel
 **Objective:** Update `alpha_kd/dashboard/server.py` to support HTTP POST on `/api/control`.
 
 **Files:**
@@ -115,6 +135,7 @@ python3 -c "from alpha_kd.__main__ import run_simulation; print('Engine imports 
 **Details:**
 - Add `do_POST` handler in `DashboardHandler` to parse incoming JSON and update the shared control state via `update_control(data)`.
 - Ensure CORS headers are sent.
+- Inject `loading` state status into the `/api/telemetry` GET responses to inform the UI of state changes.
 
 **Verification:**
 ```bash
@@ -125,8 +146,8 @@ python3 -c "import alpha_kd.dashboard.server; print('Server module verified')"
 
 ---
 
-### Task 6: Update Dashboard UI Controls (HTML/CSS/JS)
-**Objective:** Add glassmorphic control panel header, mode selection dropdown, start/pause/halt buttons, and wire POST requests.
+### Task 7: Update Dashboard UI Controls & Loading State (HTML/CSS/JS)
+**Objective:** Add glassmorphic control panel header, mode selection dropdown, start/pause/halt buttons, loading indicator, and wire POST requests.
 
 **Files:**
 - Modify: `alpha_kd/dashboard/static/index.html`
@@ -136,11 +157,12 @@ python3 -c "import alpha_kd.dashboard.server; print('Server module verified')"
 **Details:**
 - Add control panel header to HTML with elements: dropdown containing modes, buttons for Start Stream, Pause Stream, and FORCE HALT.
 - Style these components with clean glassmorphic aesthetics. Ensure `style.css` stays under 150 lines.
+- Add UI indicator for loading state, displaying `STATUS: LOADING` when data fetching is in progress.
 - Wire app.js to send POST actions to `/api/control` on button click and dropdown change.
 
 **Verification:**
 ```bash
-# Check that the files parse correctly
+# Verify parsing of static files
 python3 -c "open('alpha_kd/dashboard/static/index.html').read()"
 ```
 
@@ -148,7 +170,7 @@ python3 -c "open('alpha_kd/dashboard/static/index.html').read()"
 
 ---
 
-### Task 7: Run Self-Certification & QA
+### Task 8: Run Self-Certification & QA
 **Objective:** Run the full validation suite locally to certify compliance with all development constraints.
 
 **Verification:**
@@ -169,7 +191,7 @@ python3 -c "open('alpha_kd/dashboard/static/index.html').read()"
 
 ---
 
-### Task 8: Phase 6 Narrative Report
+### Task 9: Phase 6 Narrative Report
 **Objective:** Author the narrative report summarizing achievements.
 
 **Files:**
@@ -185,9 +207,10 @@ python3 -c "open('alpha_kd/dashboard/static/index.html').read()"
 2. Execution mode dropdown offers 'Historical Backtest', 'Forward Test (Simulated Live)', and 'Paper Trading (Real-Time Live)'.
 3. Control buttons ('Start Stream', 'Pause Stream', 'FORCE HALT') transmit POST requests to `/api/control`.
 4. Control changes dynamically update the data loop feeding the portfolio engine without killing the server.
-5. FORCE HALT instantly flips `is_halted = True` on the circuit breaker.
-6. All modified and created assets stay strictly under 150 lines.
-7. `pytest` passes with 100% green status.
+5. Loading status is safely exposed via telemetry server during data load and displays as `STATUS: LOADING` in UI.
+6. FORCE HALT instantly flips `is_halted = True` on the circuit breaker.
+7. All modified and created assets stay strictly under 150 lines.
+8. `pytest` passes with 100% green status.
 
 ---
 
