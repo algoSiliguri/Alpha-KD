@@ -4,6 +4,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 from alpha_kd.telemetry.logger import TelemetryBuffer
+from alpha_kd.dashboard.control_state import get_control, update_control
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
@@ -33,14 +34,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             buf = TelemetryBuffer(Path("telemetry.jsonl"))
             logs = buf.tail(50)
 
-            from alpha_kd.dashboard.control_state import get_control
-            ctrl = get_control()
-
+            control = get_control()
             response_data = {
                 "logs": logs,
-                "loading": ctrl["loading"],
-                "mode": ctrl["mode"],
-                "action": ctrl["action"],
+                "loading": control["loading"],
+                "mode": control["mode"],
+                "action": control["action"],
             }
             self.wfile.write(json.dumps(response_data).encode("utf-8"))
         else:
@@ -52,21 +51,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             try:
                 data = json.loads(post_data.decode("utf-8"))
-                from alpha_kd.dashboard.control_state import update_control
                 update_control(data)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_cors_headers()
                 self.end_headers()
-                res = json.dumps({"status": "success"})
-                self.wfile.write(res.encode("utf-8"))
+                res = {"status": "ok", "control": get_control()}
+                self.wfile.write(json.dumps(res).encode("utf-8"))
             except Exception as e:
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
                 self.send_cors_headers()
                 self.end_headers()
-                res = json.dumps({"error": str(e)})
-                self.wfile.write(res.encode("utf-8"))
+                res = {"status": "error", "message": str(e)}
+                self.wfile.write(json.dumps(res).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
