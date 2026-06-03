@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from alpha_kd.data_fetcher import YahooFinanceFetcher
+from alpha_kd.data.data_fetcher import YahooFinanceFetcher
 
 
 class TestYahooFinanceFetcher:

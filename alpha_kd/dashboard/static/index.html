@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha-KD Telemetry Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-decor"></div>
+    <div class="dashboard-container">
+        <header>
+            <h1>Alpha-KD <span>Telemetry</span></h1>
+            <div class="status-indicator">
+                <span class="pulse"></span> LIVE MONITOR
+            </div>
+        </header>
+
+        <main class="grid-layout">
+            <section class="card glass">
+                <h2>Strategy Status</h2>
+                <div class="metric-group">
+                    <div class="metric"><span class="label">Side</span><span id="strategy-side" class="value">FLAT</span></div>
+                    <div class="metric"><span class="label">Entry Price</span><span id="entry-price" class="value">-</span></div>
+                    <div class="metric"><span class="label">Unrealized PnL</span><span id="unrealized-pnl" class="value">-</span></div>
+                </div>
+            </section>
+
+            <section class="card glass">
+                <h2>Drawdown Tracker</h2>
+                <div class="metric-group">
+                    <div class="metric"><span class="label">Current DD</span><span id="current-drawdown" class="value">0.00%</span></div>
+                    <div class="metric"><span class="label">Peak Value</span><span id="peak-value" class="value">-</span></div>
+                    <div class="metric"><span class="label">Breaker Status</span><span id="breaker-status" class="value status-ok">ACTIVE</span></div>
+                </div>
+            </section>
+
+            <section class="card glass">
+                <h2>Kelly Sizing Monitor</h2>
+                <div class="metric-group">
+                    <div class="metric"><span class="label">Fractional Kelly</span><span id="kelly-size" class="value">0.00%</span></div>
+                    <div class="metric"><span class="label">Trade Status</span><span id="trade-status" class="value">NORMAL</span></div>
+                </div>
+            </section>
+
+            <section class="card glass col-span-full">
+                <h2>Live Telemetry Terminal View</h2>
+                <div id="terminal" class="terminal-view">
+                    <div class="terminal-line system-msg">Initializing connections...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

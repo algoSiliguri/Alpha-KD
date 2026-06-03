@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from alpha_kd.backtest_telemetry import BacktestTelemetry
-from alpha_kd.strategies.rsi_sma import RsiSma
+from alpha_kd.strategy.rsi_sma import RsiSma
+from alpha_kd.telemetry.backtest import BacktestTelemetry
 
 
 @pytest.fixture

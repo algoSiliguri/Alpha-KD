@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from alpha_kd.strategies.rsi_sma_regime import RsiSmaRegime
+from alpha_kd.strategy.rsi_sma_regime import RsiSmaRegime
 
 
 @pytest.fixture
@@ -11,8 +11,14 @@ def sample_df():
     rng = np.random.default_rng(42)
     close = 100 + rng.standard_normal(100).cumsum()
     df = pd.DataFrame(
-        {"open": close, "high": close + 1, "low": close - 1, "close": close,
-         "high_time": pd.NaT, "low_time": pd.NaT},
+        {
+            "open": close,
+            "high": close + 1,
+            "low": close - 1,
+            "close": close,
+            "high_time": pd.NaT,
+            "low_time": pd.NaT,
+        },
         index=dates,
     )
     return df

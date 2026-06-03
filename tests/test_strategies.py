@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from alpha_kd.strategies.rsi_sma import RsiSma
+from alpha_kd.strategy.rsi_sma import RsiSma
 
 
 @pytest.fixture
