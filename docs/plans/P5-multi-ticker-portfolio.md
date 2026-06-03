@@ -156,4 +156,5 @@ python3 -c "import alpha_kd.dashboard.server; print('Dashboard layout verified')
 
 ## Narrative Report
 
-*Pending execution by Claude Code...*
+Phase 5 has been executed successfully. Details of implementation, design choices, timeline union alignment, and drawdown breaker behavior are documented in [P5_report.md](../reports/P5_report.md).
+All tasks (Task 1 to Task 6) are 100% complete, tests pass cleanly, and files comply with the 150-line limits.
