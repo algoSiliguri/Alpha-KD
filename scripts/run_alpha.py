@@ -9,6 +9,7 @@ import mmap
 import multiprocessing.shared_memory as shm
 import gc
 import ctypes
+import subprocess
 
 from alpha_kd.execution.datafeed import HistoricalFeed
 from alpha_kd.execution.engine import ExecutionEngine
@@ -35,11 +36,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--session-id", default=str(uuid.uuid4()))
     parser.add_argument("--data-feed", required=True)
+    parser.add_argument("--tick-rate", type=int, default=0, help="Ticks per second throttle")
     args = parser.parse_args()
     
     session_id = args.session_id
     os.environ["ALPHA_KD_SESSION_ID"] = session_id
     print(f"[Orchestrator] Starting Alpha-KD with Session ID: {session_id}")
+    
+    # Spawn Native UI Process
+    print("[Orchestrator] Spawning NativeUI process...")
+    ui_process = subprocess.Popen([sys.executable, "alpha_kd/ui/app.py", "--session-id", session_id])
     
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
@@ -78,18 +84,28 @@ def main():
         data_feed=feed,
         ipc_pipe_fd=None,
         ring_mmap=ring_shm.buf,
-        snap_mmap=snap_shm.buf
+        snap_mmap=snap_shm.buf,
+        tick_rate=args.tick_rate
     )
     
     # Disable GC to prove zero-slop
     gc.disable()
-    print("[Orchestrator] GC Disabled. Firing hot loop...")
+    print(f"[Orchestrator] GC Disabled. Firing hot loop at tick rate: {args.tick_rate if args.tick_rate else 'MAX'}...")
     t0 = time.perf_counter()
     engine.run_loop()
     t1 = time.perf_counter()
     
     print(f"[Orchestrator] Run complete in {t1-t0:.4f}s. Processed {engine.tick_sequence} ticks.")
     print(f"[Orchestrator] Throughput: {engine.tick_sequence / (t1-t0):.0f} ticks/sec")
+    
+    print("\n[Orchestrator] === ENGINE_DONE ===")
+    print("[Orchestrator] Engine process detached. UI dropped into static inspection state.")
+    print("[Orchestrator] Press Ctrl+C to execute clean-slate teardown and unlink memory.")
+    
+    try:
+        ui_process.wait()
+    except KeyboardInterrupt:
+        pass
     
     cleanup(None, None)
 

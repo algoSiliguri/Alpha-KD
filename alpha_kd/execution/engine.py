@@ -15,10 +15,12 @@ class ExecutionEngine:
         data_feed, 
         ipc_pipe_fd: int, 
         ring_mmap: mmap.mmap, 
-        snap_mmap: mmap.mmap
+        snap_mmap: mmap.mmap,
+        tick_rate: int = 0
     ):
         self.strategies = strategies
         self.data_feed = data_feed
+        self.tick_rate = tick_rate
         
         if ipc_pipe_fd is not None:
             os.set_blocking(ipc_pipe_fd, False)
@@ -49,9 +51,20 @@ class ExecutionEngine:
     def run_loop(self):
         start_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         
+        tick_interval = 1.0 / self.tick_rate if self.tick_rate > 0 else 0
+        import time
+        last_tick_time = time.perf_counter()
+        
         for tick in self.data_feed:
             self.tick_sequence += 1
             
+            if tick_interval > 0:
+                now = time.perf_counter()
+                elapsed = now - last_tick_time
+                if elapsed < tick_interval:
+                    time.sleep(tick_interval - elapsed)
+                last_tick_time = time.perf_counter()
+                
             if self.tick_sequence % 50000 == 0:
                 current_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 print(f"[ExecutionEngine] Tick {self.tick_sequence} | RSS: {current_mem / 1024 / 1024:.2f} MB | GC: {gc.get_stats()}")

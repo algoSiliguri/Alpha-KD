@@ -28,6 +28,14 @@ def run_ui():
     #     reader.render_tick() # Non-blocking read and plot update
     #     dpg.render_dearpygui_frame()
     # dpg.destroy_context()
+    
+    import time
+    print("[NativeUI] UI spawned. Entering static inspection state (Mocked Dear PyGui loop)...")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("[NativeUI] Shutting down.")
 
 if __name__ == "__main__":
     run_ui()
