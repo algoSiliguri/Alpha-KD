@@ -2,6 +2,8 @@ import ctypes
 import mmap
 import os
 import errno
+import gc
+import resource
 from typing import List
 from alpha_kd.telemetry.structures import TelemetryHeader, DoubleBufferedSnapshot
 from alpha_kd.telemetry.seqlock import SeqLock
@@ -45,8 +47,14 @@ class ExecutionEngine:
         pass # Handle Pause, Stop, etc.
 
     def run_loop(self):
+        start_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        
         for tick in self.data_feed:
             self.tick_sequence += 1
+            
+            if self.tick_sequence % 50000 == 0:
+                current_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+                print(f"[ExecutionEngine] Tick {self.tick_sequence} | RSS: {current_mem / 1024 / 1024:.2f} MB | GC: {gc.get_stats()}")
             
             raw_cmds = self.poll_ipc_commands()
             if raw_cmds:
@@ -78,7 +86,7 @@ class ExecutionEngine:
                 # Frame construction & Seqlock
                 header = TelemetryHeader.from_buffer(self.ring_mmap, self.ring_offset)
                 
-                with SeqLock.write_lock(header.seqlock):
+                with SeqLock.write_lock(header, "seqlock"):
                     header.timestamp_ns = tick.timestamp_ns
                     header.strategy_id = strategy.id
                     header.status_flag = strategy.status
@@ -92,7 +100,7 @@ class ExecutionEngine:
                 self.ring_offset += total_frame_size
                 
                 # Snapshot Update
-                with SeqLock.write_lock(self.snapshot_mem.seqlock):
+                with SeqLock.write_lock(self.snapshot_mem, "seqlock"):
                     inactive_idx = 1 - self.snapshot_mem.active_index
                     target_buf = self.snapshot_mem.buffers[inactive_idx]
                     
@@ -106,7 +114,7 @@ class ExecutionEngine:
     def _handle_wraparound(self):
         # Insert FLAG_WRAPAROUND frame
         header = TelemetryHeader.from_buffer(self.ring_mmap, self.ring_offset)
-        with SeqLock.write_lock(header.seqlock):
+        with SeqLock.write_lock(header, "seqlock"):
             header.status_flag = 0xFF # 0xFF = WRAPAROUND
             header.payload_length = 0
             

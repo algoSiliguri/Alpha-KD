@@ -1,61 +1,97 @@
-#!/usr/bin/env python3
+#!/usr/import env python3
 import os
 import sys
 import uuid
 import signal
 import time
+import argparse
+import mmap
 import multiprocessing.shared_memory as shm
+import gc
+import ctypes
+
+from alpha_kd.execution.datafeed import HistoricalFeed
+from alpha_kd.execution.engine import ExecutionEngine
+from alpha_kd.strategies.cci_strategy import CciStrategy
+from alpha_kd.telemetry.structures import DoubleBufferedSnapshot
 
 def cleanup(signum, frame):
-    print(\"\n[Orchestrator] Caught SIGINT. Performing clean shutdown...\")
-    # Clean slate ritual: unlink shared memory
+    print("\n[Orchestrator] Caught SIGINT. Performing clean shutdown...")
     try:
-        memory_name = os.environ.get(\"ALPHA_KD_SHM_NAME\", \"alpha_kd_telemetry\")
-        memory = shm.SharedMemory(name=memory_name)
-        memory.close()
-        memory.unlink()
-        print(f\"[Orchestrator] Unlinked shared memory: {memory_name}\")
-    except FileNotFoundError:
-        pass
+        session_id = os.environ.get("ALPHA_KD_SESSION_ID", "")
+        if session_id:
+            for name in [f"ring_{session_id}", f"snap_{session_id}"]:
+                try:
+                    memory = shm.SharedMemory(name=name)
+                    memory.close()
+                    memory.unlink()
+                except FileNotFoundError:
+                    pass
     except Exception as e:
-        print(f\"[Orchestrator] Error during shared memory cleanup: {e}\")
-    
+        print(f"[Orchestrator] Error during shared memory cleanup: {e}")
     sys.exit(0)
 
 def main():
-    # Inject Session ID
-    session_id = str(uuid.uuid4())
-    os.environ[\"ALPHA_KD_SESSION_ID\"] = session_id
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--session-id", default=str(uuid.uuid4()))
+    parser.add_argument("--data-feed", required=True)
+    args = parser.parse_args()
     
-    # Define shared memory name
-    shm_name = f\"alpha_kd_telemetry_{session_id}\"
-    os.environ[\"ALPHA_KD_SHM_NAME\"] = shm_name
-
-    print(f\"[Orchestrator] Starting Alpha-KD with Session ID: {session_id}\")
+    session_id = args.session_id
+    os.environ["ALPHA_KD_SESSION_ID"] = session_id
+    print(f"[Orchestrator] Starting Alpha-KD with Session ID: {session_id}")
     
-    # Clean slate ritual: ensure any dangling memory is unlinked (though UUID should prevent collisions)
-    try:
-        memory = shm.SharedMemory(name=shm_name, create=True, size=1024*1024) # 1MB for telemetry
-        print(f\"[Orchestrator] Created shared memory: {shm_name}\")
-    except FileExistsError:
-        print(f\"[Orchestrator] Shared memory {shm_name} already exists. Unlinking and recreating...\")
-        memory = shm.SharedMemory(name=shm_name)
-        memory.unlink()
-        memory = shm.SharedMemory(name=shm_name, create=True, size=1024*1024)
-        
-    # Set up SIGINT trap
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
 
-    try:
-        print(\"[Orchestrator] Running... (Press Ctrl+C to stop)\")
-        while True:
-            time.sleep(1)
-    except Exception as e:
-        print(f\"[Orchestrator] Exception: {e}\")
-    finally:
-        # If we exit the loop, cleanup
-        cleanup(None, None)
+    # Clean slate ritual and allocate memory
+    ring_name = f"ring_{session_id}"
+    snap_name = f"snap_{session_id}"
+    
+    # 10MB ring buffer
+    ring_size = 10 * 1024 * 1024
+    snap_size = ctypes.sizeof(DoubleBufferedSnapshot)
+    
+    for name in [ring_name, snap_name]:
+        try:
+            m = shm.SharedMemory(name=name)
+            m.unlink()
+        except FileNotFoundError:
+            pass
 
-if __name__ == \"__main__\":
+    ring_shm = shm.SharedMemory(name=ring_name, create=True, size=ring_size)
+    snap_shm = shm.SharedMemory(name=snap_name, create=True, size=snap_size)
+    
+    # Init Engine
+    feed = HistoricalFeed(args.data_feed)
+    strategies = [CciStrategy(1, {"cci_period": 20, "atr_period": 20})]
+    
+    # Mmap objects are accessible via .buf property of SharedMemory, but engine.py expects mmap.mmap.
+    # SharedMemory.buf is a memoryview. Engine currently uses mmap methods directly.
+    # We will pass the memoryview directly if engine supports it. 
+    # But Engine uses len(ring_mmap), memoryview(self.ring_mmap), which works.
+    # Wait, engine also uses mmap methods? No, just len() and memoryview() and from_buffer().
+    # memoryview and shm.buf works perfectly with ctypes.from_buffer()
+    
+    engine = ExecutionEngine(
+        strategies=strategies,
+        data_feed=feed,
+        ipc_pipe_fd=None,
+        ring_mmap=ring_shm.buf,
+        snap_mmap=snap_shm.buf
+    )
+    
+    # Disable GC to prove zero-slop
+    gc.disable()
+    print("[Orchestrator] GC Disabled. Firing hot loop...")
+    t0 = time.perf_counter()
+    engine.run_loop()
+    t1 = time.perf_counter()
+    
+    print(f"[Orchestrator] Run complete in {t1-t0:.4f}s. Processed {engine.tick_sequence} ticks.")
+    print(f"[Orchestrator] Throughput: {engine.tick_sequence / (t1-t0):.0f} ticks/sec")
+    
+    cleanup(None, None)
+
+if __name__ == "__main__":
     main()

@@ -43,9 +43,9 @@ class HistoricalFeed(AbstractDataFeed):
                 ]))
                 f.write(dummy_array.tobytes())
                 
-        self._fd = os.open(bin_file_path, os.O_RDONLY)
+        self._fd = os.open(bin_file_path, os.O_RDWR)
         self._size = os.path.getsize(bin_file_path)
-        self._mmap = mmap.mmap(self._fd, self._size, prot=mmap.PROT_READ)
+        self._mmap = mmap.mmap(self._fd, self._size, prot=mmap.PROT_WRITE | mmap.PROT_READ)
         
         self.tick_size = ctypes.sizeof(TickData)
         self.total_ticks = self._size // self.tick_size
