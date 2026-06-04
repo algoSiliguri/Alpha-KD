@@ -27,7 +27,7 @@ MODELS     models/{saved,train}
 
 ## Tooling
 - File ops: `rtk read|grep|find|ls`. Heavy sweeps → Explore sub-agent (isolated context).
-- Env: pip, requirements.txt (no lockfile). Python 3, pandas 1.5.3 / sklearn 1.2.2.
+- Env: uv, pyproject.toml (uv.lock). Python 3.10, FastAPI, onnxruntime, uPlot.
 
 ## Execution Contract (Agent Protocol)
 
@@ -101,28 +101,25 @@ Before pushing any commit, run the checks below locally and paste the results in
 Quick commands:
 ```bash
 # 1. Clean build + test
-python -m venv /tmp/alpha-kd-clean-venv
-source /tmp/alpha-kd-clean-venv/bin/activate
-pip install -e ".[dev]"
-pytest -q
+uv sync
+uv run pytest -q
 
 # 2. Lint (MUST match CI gate exactly)
-pip install ruff
-ruff check alpha_kd/ tests/ --select E,W,F
+uv run ruff check src/ tests/ --select E,W,F
 
 # 3. Line-length check (MUST be zero output)
-for f in alpha_kd/*.py alpha_kd/**/*.py tests/*.py; do
+for f in src/alpha_kd/*.py src/alpha_kd/**/*.py tests/*.py; do
   awk -v f="$f" '{if (length > 88) print f ":" NR ": " length " chars"}' "$f"
 done
 
 # 4. Import hygiene
-grep -r "from .* import \*" alpha_kd/ tests/ || echo "No wildcard imports found."
+grep -r "from .* import \*" src/alpha_kd/ tests/ || echo "No wildcard imports found."
 
 # 5. Secret hygiene
-grep -riE "(password|secret|api_key|token)" alpha_kd/ tests/ || echo "No obvious secrets found."
+grep -riE "(password|secret|api_key|token)" src/alpha_kd/ tests/ || echo "No obvious secrets found."
 
 # 6. File size check (no file >150 lines)
-find alpha_kd/ tests/ -name "*.py" -exec wc -l {} + | awk '$1 > 150 {print "OVERSIZE: " $2 " (" $1 " lines)"}'
+find src/alpha_kd/ tests/ -name "*.py" -exec wc -l {} + | awk '$1 > 150 {print "OVERSIZE: " $2 " (" $1 " lines)"}'
 ```
 
 **Rule: If any step produces non-empty output, do not push. Fix it first.**
