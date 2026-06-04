@@ -26,11 +26,11 @@ class SeqLock:
             if seq1 & 1: # Odd means write in progress
                 time.sleep(0.000001) # Yield
                 continue
-            
+
             result = read_func()
-            
+
             seq2 = getattr(obj, field_name)
             if seq1 == seq2:
                 return result
-                
+
         raise TimeoutError("SeqLock read_retry maxed out.")

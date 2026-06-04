@@ -6,7 +6,7 @@ class CciStrategy(BaseStrategy):
         super().__init__(strategy_id, parameters)
         self.cci_period = parameters.get("cci_period", 20)
         self.atr_period = parameters.get("atr_period", 20)
-        
+
         # Circular buffers for pure numpy zero-allocation execution
         self._price_buffer = np.zeros(max(self.cci_period, self.atr_period), dtype=np.float32)
         self._buffer_idx = 0
@@ -16,7 +16,7 @@ class CciStrategy(BaseStrategy):
         # Update circular buffer (zero-allocation)
         idx = self._buffer_idx % len(self._price_buffer)
         self._price_buffer[idx] = tick.close
-        
+
         self._buffer_idx += 1
         if self._buffer_idx >= len(self._price_buffer):
             self._is_filled = True

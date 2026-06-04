@@ -1,0 +1,17 @@
+{
+  "name": "alpha-kd-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "uplot": "^1.6.31"
+  },
+  "devDependencies": {
+    "vite": "^4.4.5"
+  }
+}

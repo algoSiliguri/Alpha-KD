@@ -29,7 +29,7 @@ class HistoricalFeed(AbstractDataFeed):
         self.bin_file_path = bin_file_path
         self._mmap = None
         self._fd = None
-        
+
         if not os.path.exists(bin_file_path):
             # Create a dummy bin file for testing if it doesn't exist
             with open(bin_file_path, "wb") as f:
@@ -42,11 +42,11 @@ class HistoricalFeed(AbstractDataFeed):
                     ('volume', np.float32)
                 ]))
                 f.write(dummy_array.tobytes())
-                
+
         self._fd = os.open(bin_file_path, os.O_RDWR)
         self._size = os.path.getsize(bin_file_path)
         self._mmap = mmap.mmap(self._fd, self._size, prot=mmap.PROT_WRITE | mmap.PROT_READ)
-        
+
         self.tick_size = ctypes.sizeof(TickData)
         self.total_ticks = self._size // self.tick_size
 

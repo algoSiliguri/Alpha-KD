@@ -1,16 +1,25 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "alpha-kd"
 version = "0.1.0"
 description = "Alpha-KD quantitative trading system"
-requires-python = ">=3.9"
+readme = "README.md"
+requires-python = ">=3.11"
 dependencies = [
-    "pandas",
-    "numpy",
-    "scikit-learn",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+    "websockets>=11.0",
+    "onnxruntime>=1.15.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pandas>=1.5.3",
+    "numpy>=1.22.0",
+    "scikit-learn>=1.2.2",
     "matplotlib",
     "ta",
     "hmmlearn",
@@ -18,11 +27,21 @@ dependencies = [
     "requests",
     "python-dotenv",
     "yfinance>=0.2.54",
+    "pytest>=7.0.0",
+    "pytest-cov",
+    "ruff>=0.1.0",
+    "httpx",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest", "pytest-cov"]
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/src/alpha_kd/ui/frontend/node_modules",
+  "/src/alpha_kd/ui/frontend/dist",
+]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["alpha_kd*"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/alpha_kd"]
+exclude = [
+  "/src/alpha_kd/ui/frontend/node_modules",
+  "/src/alpha_kd/ui/frontend/dist",
+]

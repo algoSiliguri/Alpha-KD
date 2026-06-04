@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha-KD Telemetry Dashboard</title>
+</head>
+<body>
+    <div id="app">
+        <header class="dashboard-header">
+            <div class="logo">
+                <span class="pulse-indicator disconnected" id="connection-status-dot"></span>
+                <h1>Alpha-KD Telemetry</h1>
+            </div>
+            <div class="session-info">
+                <span>Session ID:</span>
+                <span id="session-id-val">local-dev</span>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Metrics Panel -->
+            <section class="panel metrics-panel">
+                <div class="metric-card">
+                    <span class="metric-label">Ticks Sequence</span>
+                    <span class="metric-value" id="metric-sequence-id">0</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Last Price</span>
+                    <span class="metric-value" id="metric-price">0.00</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Position Size</span>
+                    <span class="metric-value" id="metric-position-size">0.00</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Unrealized PnL</span>
+                    <span class="metric-value" id="metric-unrealized-pnl">0.00</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Realized PnL</span>
+                    <span class="metric-value" id="metric-realized-pnl">0.00</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Allocated Capital</span>
+                    <span class="metric-value" id="metric-capital">0.00</span>
+                </div>
+            </section>
+
+            <!-- Chart Panel -->
+            <section class="panel chart-panel">
+                <div class="panel-header">
+                    <h2>Capital & Price History</h2>
+                </div>
+                <div class="chart-container" id="chart-container"></div>
+            </section>
+
+            <!-- Logger Panel -->
+            <section class="panel logs-panel">
+                <div class="panel-header">
+                    <h2>Strategy Event Log</h2>
+                </div>
+                <div class="logs-console" id="logs-console"></div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
