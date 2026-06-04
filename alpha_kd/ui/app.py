@@ -1,41 +1,58 @@
+import os
 import sys
-# import dearpygui.dearpygui as dpg
+import argparse
+import multiprocessing.shared_memory as shm
+import dearpygui.dearpygui as dpg
+
+from alpha_kd.ui.render_loop import NativeUIReader
+from alpha_kd.ui.views.charts import create_equity_chart
+from alpha_kd.ui.views.metrics import create_metrics_grid
+from alpha_kd.ui.views.logger import create_logger_console, log_message
 
 def run_ui():
-    """
-    Native Desktop UI initialized via Direct Command-Line Arguments.
-    """
-    import argparse
-    parser = argparse.ArgumentParser(description="Alpha-KD Native UI")
-    parser.add_argument("--session-id", required=True, help="Session UUID to map memory")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--session-id", required=True)
     args = parser.parse_args()
-
+    
     session_id = args.session_id
-    print(f"Booting Native UI for session: {session_id}")
+    ring_name = f"ring_{session_id}"
+    snap_name = f"snap_{session_id}"
     
-    # 1. Map memory using session_id
-    # ring_fd = os.open(f"/dev/shm/alpha_kd_ring_{session_id}", os.O_RDONLY)
-    # ...
+    dpg.create_context()
     
-    # 2. Setup DPG window
-    # dpg.create_context()
-    # dpg.create_viewport(title='Alpha-KD Observability', width=1200, height=800)
-    # dpg.setup_dearpygui()
+    with dpg.theme() as global_theme:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (20, 20, 20, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_Text, (220, 220, 220, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_PlotLines, (50, 205, 50, 255), category=dpg.mvThemeCat_Plots)
     
-    # 3. Render Loop
-    # dpg.show_viewport()
-    # while dpg.is_dearpygui_running():
-    #     reader.render_tick() # Non-blocking read and plot update
-    #     dpg.render_dearpygui_frame()
-    # dpg.destroy_context()
+    dpg.bind_theme(global_theme)
     
-    import time
-    print("[NativeUI] UI spawned. Entering static inspection state (Mocked Dear PyGui loop)...")
+    dpg.create_viewport(title=f"Alpha-KD Observability | Session: {session_id}", width=1200, height=600)
+    dpg.setup_dearpygui()
+    
+    create_equity_chart()
+    create_metrics_grid()
+    create_logger_console()
+    
+    dpg.show_viewport()
+    log_message(f"[System] Booting UI for session {session_id}")
+    
     try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("[NativeUI] Shutting down.")
+        ring_shm = shm.SharedMemory(name=ring_name)
+        snap_shm = shm.SharedMemory(name=snap_name)
+        reader = NativeUIReader(ring_shm.buf, snap_shm.buf)
+        log_message("[System] Successfully mapped telemetry buffers.")
+    except Exception as e:
+        log_message(f"[Error] Failed to attach shared memory: {e}")
+        reader = None
+
+    while dpg.is_dearpygui_running():
+        if reader:
+            reader.render_tick()
+        dpg.render_dearpygui_frame()
+        
+    dpg.destroy_context()
 
 if __name__ == "__main__":
     run_ui()

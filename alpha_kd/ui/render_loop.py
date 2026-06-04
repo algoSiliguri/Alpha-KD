@@ -1,8 +1,10 @@
 import mmap
 import ctypes
 import numpy as np
+import dearpygui.dearpygui as dpg
 from alpha_kd.telemetry.structures import TelemetryHeader, DoubleBufferedSnapshot
 from alpha_kd.telemetry.seqlock import SeqLock
+from alpha_kd.ui.views.logger import log_message
 
 class NativeUIReader:
     def __init__(self, ring_mmap: mmap.mmap, snap_mmap: mmap.mmap):
@@ -11,51 +13,66 @@ class NativeUIReader:
         self.snapshot_mem = DoubleBufferedSnapshot.from_buffer(snap_mmap)
         
         self.header_size = ctypes.sizeof(TelemetryHeader)
-        self.read_offset = 0
+        self.max_frames = len(ring_mmap) // self.header_size
+        
+        header_dtype = np.dtype([
+            ("seqlock", np.uint64),
+            ("timestamp_ns", np.int64),
+            ("strategy_id", np.uint32),
+            ("status_flag", np.uint8),
+            ("current_price", np.float32),
+            ("position_size", np.float32),
+            ("unrealized_pnl", np.float32),
+            ("realized_pnl", np.float32),
+            ("allocated_capital", np.float32),
+            ("payload_length", np.uint32)
+        ])
+        
+        # Stride directly over the binary map
+        self.mmap_array = np.ndarray(shape=(self.max_frames,), dtype=header_dtype, buffer=ring_mmap)
+        
+        # Pre-allocate X axis for Dear PyGui
+        self.x_axis = np.arange(self.max_frames, dtype=np.float32)
+        
         self.last_seqlock = 0
+        self.head_index = 0
 
     def render_tick(self):
-        # 1. Read header with Seqlock
-        header = TelemetryHeader.from_buffer(self.ring_mmap, self.read_offset)
-        
-        def _read():
+        def _read_snap():
+            idx = self.snapshot_mem.active_index
+            buf = self.snapshot_mem.buffers[idx]
             return {
-                "status_flag": header.status_flag,
-                "payload_length": header.payload_length,
-                "current_price": header.current_price,
-                "allocated_capital": header.allocated_capital
+                "sequence_id": buf.sequence_id,
+                "unrealized_pnl": buf.unrealized_pnl,
+                "allocated_capital": buf.allocated_capital
             }
             
         try:
-            frame_data = SeqLock.read_retry(header.seqlock, _read)
+            active_snap = SeqLock.read_retry(self.snapshot_mem, _read_snap, field_name="seqlock")
+        except TimeoutError:
+            return
             
-            # Lapping Discontinuity Check
-            if header.seqlock > self.last_seqlock + 10:
-                # We were lapped! Fast forward to head
-                self._fast_forward_to_head()
-                return None
-                
-            self.last_seqlock = header.seqlock
+        current_seq = active_snap["sequence_id"]
+        if current_seq == 0:
+            return
             
-            if frame_data["status_flag"] == 0xFF:
-                # Wraparound flag
-                self.read_offset = 0
-                return None
-                
-            total_size = self.header_size + frame_data["payload_length"]
-            self.read_offset += total_size
-            return frame_data
+        self.head_index = current_seq % self.max_frames
+        
+        if current_seq > self.last_seqlock + self.max_frames:
+            log_message("[Warning] UI was lapped by execution engine. Fast forwarding.")
+            self.last_seqlock = current_seq - 1
             
-        except Exception:
-            return None
-
-    def _fast_forward_to_head(self):
-        # Read from DoubleBufferedSnapshot to find current sequence
-        def _read_snap():
-            idx = self.snapshot_mem.active_index
-            return self.snapshot_mem.buffers[idx].sequence_id
+        if self.head_index == 0:
+            return
             
-        SeqLock.read_retry(self.snapshot_mem.seqlock, _read_snap)
-        # In a real implementation, we'd need the Engine to export its current 
-        # ring_offset atomically into the snapshot so the UI can jump there.
-        self.read_offset = 0 
+        # 1. Update Metrics Grid
+        dpg.set_value("metric_sequence_id", str(current_seq))
+        dpg.set_value("metric_upnl", f"{active_snap['unrealized_pnl']:.2f}")
+        dpg.set_value("metric_capital", f"{active_snap['allocated_capital']:.2f}")
+        
+        # 2. Update Equity Curve via Zero-Copy Numpy Slice
+        y_slice = self.mmap_array['allocated_capital'][0:self.head_index]
+        x_slice = self.x_axis[0:self.head_index]
+        
+        dpg.set_value("series_capital", [x_slice, y_slice])
+        self.last_seqlock = current_seq
