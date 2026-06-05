@@ -7,8 +7,8 @@ class SeqLock:
     def write_lock(obj, field_name="seqlock"):
         """
         Increments the target struct field to an odd number before yielding,
-        and to an even number afterwards. 
-        Because this runs on a single writer process with x86-64 TSO, 
+        and to an even number afterwards.
+        Because this runs on a single writer process with x86-64 TSO,
         Python's GIL and strong memory ordering provide the necessary fences.
         """
         seq = getattr(obj, field_name)

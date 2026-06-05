@@ -108,3 +108,66 @@ def test_websocket_streaming(mock_shm):
         assert received_header.strategy_id == 1
         assert received_header.status_flag == 2
         assert received_header.current_price == pytest.approx(1.05)
+
+
+def test_get_strategies_endpoint():
+    client = TestClient(app)
+    response = client.get("/api/strategies")
+    assert response.status_code == 200
+    data = response.json()
+    assert "strategies" in data
+    strategies = data["strategies"]
+    assert len(strategies) == 3
+    ids = [s["strategy_id"] for s in strategies]
+    assert "rsi_sma" in ids
+    assert "rsi_sma_regime" in ids
+    assert "cci" in ids
+
+
+def test_run_backtest_cci_stub_endpoint():
+    client = TestClient(app)
+    response = client.get("/api/backtest/cci")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["strategy_id"] == "cci"
+    assert data["bars_processed"] == 0
+    assert data["metrics"] is None
+
+
+def test_run_backtest_not_found_endpoint():
+    client = TestClient(app)
+    response = client.get("/api/backtest/unknown_strategy")
+    assert response.status_code == 404
+
+
+def test_run_backtest_rsi_sma_endpoint():
+    client = TestClient(app)
+    # Use small period to speed up the test
+    url = "/api/backtest/rsi_sma?symbol=AAPL&period=5d&interval=1d"
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["strategy_id"] == "rsi_sma"
+    assert "equity_curve" in data
+    assert "metrics" in data
+    assert "cumulative_returns" in data
+    assert "trades" in data
+
+
+def test_get_telemetry_history_endpoint():
+    client = TestClient(app)
+    # Write a dummy telemetry line to verify parsing
+    from alpha_kd.telemetry import TelemetryBuffer
+    from pathlib import Path
+
+    tel_path = Path("telemetry.jsonl")
+    buffer = TelemetryBuffer(tel_path)
+    buffer.record({"test_key": "test_val"})
+
+    response = client.get("/api/telemetry/history?n=5")
+    assert response.status_code == 200
+    data = response.json()
+    assert "records" in data
+    assert "total_records" in data
+    assert data["total_records"] > 0
+    assert data["records"][-1]["test_key"] == "test_val"
