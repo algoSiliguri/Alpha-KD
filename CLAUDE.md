@@ -11,7 +11,7 @@ package structure, externalized config, single strategy interface, secrets out o
 - Quantreo/ is the core hub — changes there ripple system-wide; flag blast radius first.
 - Two broker stacks exist (MetaTrader5=forex, Upstox=India). State which one a change targets.
 - Dirs with spaces ("Launching (CPCV)") — quote paths in shell.
-- After code edits, run `graphify update .` if graph exists.
+- After code edits, run `/understand --auto-update` if graph exists.
 
 ## Domain Map
 INGESTION  Upstox/, Upstox_Data/, utils/, Data/
