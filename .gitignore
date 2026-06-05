@@ -159,3 +159,6 @@ uv.lock
 # Frontend Web App assets
 src/alpha_kd/ui/frontend/node_modules/
 src/alpha_kd/ui/frontend/dist/
+
+# Understand-Anything intermediate files
+.understand-anything/intermediate/

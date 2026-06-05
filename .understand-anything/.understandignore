@@ -1,0 +1,71 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore
+
+# Active codebase restriction (strip legacy & external components to save tokens and prevent graph contamination)
+_legacy_archive/
+Upstox/
+Notebooks/
+LiveTradingStrategy/
+
+# Standard Defaults & Temp Files
+node_modules/
+.git/
+dist/
+build/
+out/
+coverage/
+.next/
+.cache/
+.turbo/
+target/
+obj/
+*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.mp3
+*.mp4
+*.pdf
+*.zip
+*.tar
+*.gz
+*.min.js
+*.min.css
+*.map
+*.generated.*
+.idea/
+.vscode/
+LICENSE
+.gitignore
+.editorconfig
+.prettierrc
+.eslintrc*
+*.log
+*.bin
+telemetry.jsonl
+market_data_test.bin
+utils/instruments.json
+DenoisingData/
+Upstox_Data/
+MarketDownRegimeAnalyzer/
+Launching (CPCV)/
+Launching (MC)/
+Launching (WFO)/
+Data/
+models/
+regime_detection/
+utils/
+_legacy_archive/
+Upstox/
+Notebooks/
+LiveTradingStrategy/
