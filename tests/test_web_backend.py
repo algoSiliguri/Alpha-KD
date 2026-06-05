@@ -288,9 +288,11 @@ def test_backtest_cci_unaffected_by_params():
 def test_backtest_rsi_sma_regime_accepts_params():
     """rsi_sma_regime also accepts param overrides."""
     client = TestClient(app)
-    response = client.get(
-        "/api/backtest/rsi_sma_regime?symbol=AAPL&period=5d&interval=1d&fast_sma=5&slow_sma=15"
+    url = (
+        "/api/backtest/rsi_sma_regime"
+        "?symbol=AAPL&period=5d&interval=1d&fast_sma=5&slow_sma=15"
     )
+    response = client.get(url)
     assert response.status_code == 200
     data = response.json()
     assert data["parameters_used"]["fast_sma"] == 5
