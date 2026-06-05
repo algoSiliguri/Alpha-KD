@@ -7,18 +7,47 @@
 </head>
 <body>
     <div id="app">
+        <!-- Global Status Warning Banners -->
+        <div id="api-offline-banner" class="global-alert-banner" style="display: none;">
+            <span>⚠️ REST API unavailable. Strategy retrieval and backtesting are offline.</span>
+        </div>
+        <div id="ws-offline-banner" class="global-alert-banner ws-alert" style="display: none;">
+            <span>⚠️ Live stream unavailable. Attempting to reconnect to telemetry feed...</span>
+        </div>
+
         <header class="dashboard-header">
             <div class="logo">
                 <span class="pulse-indicator disconnected" id="connection-status-dot"></span>
-                <h1>Alpha-KD Telemetry</h1>
+                <div>
+                    <h1>Alpha-KD Telemetry</h1>
+                    <span class="read-only-badge">READ-ONLY MONITORING</span>
+                </div>
             </div>
-            <div class="session-info">
-                <span>Session ID:</span>
-                <span id="session-id-val">local-dev</span>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <nav class="tabs-navigation">
+                    <button class="tab-btn active" id="tab-live">Live Stream (Zero-Alloc)</button>
+                    <button class="tab-btn" id="tab-backtest">Backtest Analysis (Legacy Research)</button>
+                </nav>
+                <div class="session-info">
+                    <span>Session ID:</span>
+                    <span id="session-id-val">local-dev</span>
+                </div>
             </div>
         </header>
 
-        <main class="dashboard-grid">
+        <!-- Live Stream View -->
+        <main id="live-stream-view" class="dashboard-grid view-active">
+            <!-- Mode Header explanation -->
+            <div class="mode-explanation-bar">
+                <strong>Zero-Alloc Streaming Mode:</strong> Low-latency IPC telemetry via active shared memory rings. Live order routing and execution is currently disabled.
+            </div>
+
+            <!-- Warning / Status note if strategy is stub/incomplete -->
+            <div class="status-note" id="live-status-note" style="display: none; grid-column: 1 / -1; margin-bottom: 0;">
+                <span class="status-note-bullet"></span>
+                <span>Zero-alloc streaming infrastructure. Current CciStrategy signal layer is stub/incomplete (no real strategy output).</span>
+            </div>
+
             <!-- Metrics Panel -->
             <section class="panel metrics-panel">
                 <div class="metric-card">
@@ -63,6 +92,131 @@
                 <div class="logs-console" id="logs-console"></div>
             </section>
         </main>
+
+        <!-- Backtest Analysis View -->
+        <main id="backtest-view" class="dashboard-grid view-hidden">
+            <!-- Mode Header explanation -->
+            <div class="mode-explanation-bar info-bar">
+                <strong>Legacy Research Mode:</strong> Historical data simulation using vectorized pandas-based backtesting engines. Running backtests does NOT execute live trades.
+            </div>
+
+            <!-- Backtest Setup Controls -->
+            <section class="panel" style="padding: 1rem;">
+                <div class="backtest-controls">
+                    <div class="control-group">
+                        <label for="strategy-selector">Select Strategy</label>
+                        <select id="strategy-selector" class="control-select">
+                            <option value="">Loading strategies...</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="compare-strategy-selector">Compare Strategy (Legacy)</label>
+                        <select id="compare-strategy-selector" class="control-select" disabled>
+                            <option value="">-- No Comparison --</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="flex: 1; min-width: 200px;">
+                        <label>Strategy Info</label>
+                        <div id="strategy-info" class="backtest-info-box">Select a strategy to view configuration details.</div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-self: flex-end;">
+                        <button id="export-json-btn" class="btn-secondary" disabled style="display: none;">Export JSON</button>
+                        <button id="export-csv-btn" class="btn-secondary" disabled style="display: none;">Export CSV</button>
+                        <button id="run-backtest-btn" class="btn-primary" disabled>Run Backtest</button>
+                    </div>
+                </div>
+                <!-- Status indicators -->
+                <div id="backtest-status-msg" style="display: none;"></div>
+            </section>
+
+            <div class="backtest-results-grid" id="backtest-results-panel">
+                <div class="backtest-subpanels" style="grid-column: 1;">
+                    <!-- Equity Curve Chart -->
+                    <section class="panel chart-panel-bt">
+                        <div class="panel-header">
+                            <h2>Equity Curve History</h2>
+                        </div>
+                        <div class="chart-container" id="backtest-chart-container"></div>
+                    </section>
+
+                    <!-- Trade Log -->
+                    <section class="panel trade-log-panel">
+                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2>Reconstructed Trade Log</h2>
+                            <span id="bt-trades-count" class="info-badge">0 Trades</span>
+                        </div>
+                        <div class="trade-log-container" id="backtest-trades-container">
+                            <div class="status-message empty">No backtest run yet. Select a strategy to begin.</div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="backtest-subpanels" style="grid-column: 2;">
+                    <!-- Metrics Panel -->
+                    <section class="panel">
+                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2>Backtest Metrics</h2>
+                            <span id="bt-bars-count" class="info-badge">0 Bars</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem;" id="backtest-metrics-container">
+                            <div class="metric-card">
+                                <span class="metric-label">Total Return <span class="tooltip" data-tooltip="Total Return = Net profit or loss percentage over the backtest period.">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-return">Metric unavailable.</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">Max Drawdown <span class="tooltip" data-tooltip="Max Drawdown = largest peak-to-trough equity drop.">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-drawdown">Metric unavailable.</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">Drawdown Duration <span class="tooltip" data-tooltip="Drawdown Duration = maximum number of bars spent in a drawdown.">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-dd-duration">Metric unavailable.</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">Win Rate <span class="tooltip" data-tooltip="Win Rate = percentage of winning trades.">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-winrate">Metric unavailable.</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-label">Profit Factor <span class="tooltip" data-tooltip="Profit Factor = gross winning returns divided by gross losing returns.">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-profitfactor">Metric unavailable.</span>
+                            </div>
+                            <div class="metric-card" id="bt-sharpe-card">
+                                <span class="metric-label">Sharpe Ratio <span class="tooltip" data-tooltip="Sharpe Ratio = average return relative to risk; may be unavailable when sample size is too small (< 10).">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-sharpe">Metric unavailable.</span>
+                            </div>
+                            <div class="metric-card" id="bt-sortino-card">
+                                <span class="metric-label">Sortino Ratio <span class="tooltip" data-tooltip="Sortino Ratio = average return relative to downside risk; may be unavailable when sample size is too small (< 10).">🛈</span></span>
+                                <span class="metric-value" id="bt-metric-sortino">Metric unavailable.</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Research Observations & Context Panel -->
+                    <section class="panel observations-panel" id="bt-observations-panel">
+                        <div class="panel-header">
+                            <h2>Research Observations & Context</h2>
+                        </div>
+                        <div class="observations-container" id="bt-observations-container">
+                            <div class="status-message empty" style="padding: 0.5rem; font-size: 0.8rem;">No observations generated yet.</div>
+                        </div>
+                    </section>
+
+                    <!-- Regime Display -->
+                    <section class="panel regime-panel">
+                        <div class="panel-header">
+                            <h2>Regime Distribution & Timeline</h2>
+                        </div>
+                        <!-- Regime Summary Distribution Percentages -->
+                        <div id="regime-distribution-bar" class="regime-dist-wrapper">
+                            <span class="regime-dist-empty">No distribution data available.</span>
+                        </div>
+                        <div class="regime-list" id="backtest-regime-container" style="margin-top: 0.75rem; flex: 1;">
+                            <div class="status-message empty" style="padding: 0.5rem; font-size: 0.8rem;">No regime data.</div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
     </div>
     <script type="module" src="/src/main.js"></script>
 </body>
