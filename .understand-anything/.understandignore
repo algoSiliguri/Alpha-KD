@@ -1,12 +1,6 @@
 # .understandignore — patterns for files/dirs to exclude from analysis
 # Syntax: same as .gitignore
 
-# Active codebase restriction (strip legacy & external components to save tokens and prevent graph contamination)
-_legacy_archive/
-Upstox/
-Notebooks/
-LiveTradingStrategy/
-
 # Standard Defaults & Temp Files
 node_modules/
 .git/
@@ -54,18 +48,4 @@ LICENSE
 *.bin
 telemetry.jsonl
 market_data_test.bin
-utils/instruments.json
-DenoisingData/
-Upstox_Data/
-MarketDownRegimeAnalyzer/
-Launching (CPCV)/
-Launching (MC)/
-Launching (WFO)/
 Data/
-models/
-regime_detection/
-utils/
-_legacy_archive/
-Upstox/
-Notebooks/
-LiveTradingStrategy/
