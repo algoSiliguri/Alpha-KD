@@ -8,7 +8,9 @@ class CciStrategy(BaseStrategy):
         self.atr_period = parameters.get("atr_period", 20)
 
         # Circular buffers for pure numpy zero-allocation execution
-        self._price_buffer = np.zeros(max(self.cci_period, self.atr_period), dtype=np.float32)
+        self._price_buffer = np.zeros(
+            max(self.cci_period, self.atr_period), dtype=np.float32
+        )
         self._buffer_idx = 0
         self._is_filled = False
 

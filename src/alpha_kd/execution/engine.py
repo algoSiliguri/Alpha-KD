@@ -49,8 +49,6 @@ class ExecutionEngine:
         pass # Handle Pause, Stop, etc.
 
     def run_loop(self):
-        start_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-
         tick_interval = 1.0 / self.tick_rate if self.tick_rate > 0 else 0
         import time
         last_tick_time = time.perf_counter()
@@ -67,7 +65,11 @@ class ExecutionEngine:
 
             if self.tick_sequence % 50000 == 0:
                 current_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-                print(f"[ExecutionEngine] Tick {self.tick_sequence} | RSS: {current_mem / 1024 / 1024:.2f} MB | GC: {gc.get_stats()}")
+                rss_mb = current_mem / 1024 / 1024
+                print(
+                    f"[ExecutionEngine] Tick {self.tick_sequence}"
+                    f" | RSS: {rss_mb:.2f} MB | GC: {gc.get_stats()}"
+                )
 
             raw_cmds = self.poll_ipc_commands()
             if raw_cmds:
@@ -78,10 +80,15 @@ class ExecutionEngine:
                 remaining_space = self.ring_size - self.ring_offset - self.header_size
                 if remaining_space <= 0:
                     self._handle_wraparound()
-                    remaining_space = self.ring_size - self.ring_offset - self.header_size
+                    remaining_space = (
+                        self.ring_size - self.ring_offset - self.header_size
+                    )
 
                 # Sliced memoryview for variable payload
-                payload_buffer = memoryview(self.ring_mmap)[self.ring_offset + self.header_size : self.ring_offset + self.header_size + remaining_space]
+                start = self.ring_offset + self.header_size
+                payload_buffer = memoryview(self.ring_mmap)[
+                    start : start + remaining_space
+                ]
 
                 # Strategy logic evaluates here in pure-function manner
                 payload_len = strategy.on_tick(tick, {}, payload_buffer)
@@ -91,8 +98,12 @@ class ExecutionEngine:
                 # Double check boundaries if strategy lied about payload length
                 if self.ring_offset + total_frame_size > self.ring_size:
                     self._handle_wraparound()
-                    # Re-run after wraparound (in reality, should be properly structured to avoid double compute)
-                    payload_buffer = memoryview(self.ring_mmap)[self.ring_offset + self.header_size : self.ring_offset + self.header_size + (self.ring_size - self.ring_offset - self.header_size)]
+                    # Re-run after wraparound; restructure to avoid double-compute
+                    wrap_space = self.ring_size - self.ring_offset - self.header_size
+                    wrap_start = self.ring_offset + self.header_size
+                    payload_buffer = memoryview(self.ring_mmap)[
+                        wrap_start : wrap_start + wrap_space
+                    ]
                     payload_len = strategy.on_tick(tick, {}, payload_buffer)
                     total_frame_size = self.header_size + payload_len
 
@@ -107,7 +118,9 @@ class ExecutionEngine:
                     header.position_size = getattr(strategy, 'position_size', 0.0)
                     header.unrealized_pnl = strategy.unrealized_pnl
                     header.realized_pnl = 0.0
-                    header.allocated_capital = getattr(strategy, 'allocated_capital', 10000.0)
+                    header.allocated_capital = getattr(
+                        strategy, 'allocated_capital', 10000.0
+                    )
                     header.payload_length = payload_len
 
                 self.ring_offset += total_frame_size

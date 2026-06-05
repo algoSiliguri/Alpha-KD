@@ -45,10 +45,10 @@ jobs:
         run: pip install ruff
       - name: Check wildcard imports and unused imports
         run: |
-          ruff check alpha_kd/ tests/ --select E,W,F
+          ruff check src/alpha_kd/ tests/ --select E,W,F
       - name: Explicitly reject import *
         run: |
-          if grep -r "from .* import \*" alpha_kd/ tests/; then
+          if grep -r "from .* import \*" src/alpha_kd/ tests/; then
             echo "ERROR: Wildcard imports found."
             exit 1
           fi
@@ -63,7 +63,7 @@ jobs:
       - name: Install bandit
         run: pip install bandit
       - name: Run bandit
-        run: bandit -r alpha_kd/ -f json -o bandit-report.json || true
+        run: bandit -r src/alpha_kd/ -f json -o bandit-report.json || true
       - name: Fail on high-severity issues
         run: |
           if [ -s bandit-report.json ]; then

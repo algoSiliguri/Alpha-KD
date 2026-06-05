@@ -1,4 +1,4 @@
-from typing import Type, Dict, Any
+from typing import Type, Dict
 from .base import BaseStrategy
 
 STRATEGY_REGISTRY: Dict[str, Type[BaseStrategy]] = {}
@@ -10,5 +10,5 @@ def register_strategy(name: str):
     return decorator
 
 # Force load to register
-from .cci_strategy import CciStrategy
+from .cci_strategy import CciStrategy  # noqa: E402
 register_strategy("CciStrategy")(CciStrategy)
