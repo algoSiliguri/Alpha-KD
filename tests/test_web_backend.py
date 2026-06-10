@@ -171,3 +171,129 @@ def test_get_telemetry_history_endpoint():
     assert "total_records" in data
     assert data["total_records"] > 0
     assert data["records"][-1]["test_key"] == "test_val"
+
+
+# ---------------------------------------------------------------------------
+# Milestone 4A — Parameterized Research Runs
+# ---------------------------------------------------------------------------
+
+
+def test_backtest_default_parameters_used_field():
+    """Default run must include parameters_used == DEFAULT_PARAMS."""
+    client = TestClient(app)
+    response = client.get("/api/backtest/rsi_sma?symbol=AAPL&period=5d&interval=1d")
+    assert response.status_code == 200
+    data = response.json()
+    assert "parameters_used" in data
+    p = data["parameters_used"]
+    assert p["fast_sma"] == 10
+    assert p["slow_sma"] == 20
+    assert p["rsi"] == 14
+    assert pytest.approx(p["tp"]) == 0.01
+    assert pytest.approx(p["sl"]) == -0.01
+    assert pytest.approx(p["cost"]) == 0.0001
+    assert p["leverage"] == 1
+
+
+def test_backtest_single_param_override():
+    """Single override merges with defaults; others stay at default."""
+    client = TestClient(app)
+    response = client.get(
+        "/api/backtest/rsi_sma?symbol=AAPL&period=5d&interval=1d&fast_sma=5"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["parameters_used"]["fast_sma"] == 5
+    assert data["parameters_used"]["slow_sma"] == 20
+
+
+def test_backtest_full_param_override():
+    """All 7 params overridden; parameters_used reflects all supplied values."""
+    client = TestClient(app)
+    url = (
+        "/api/backtest/rsi_sma"
+        "?symbol=AAPL&period=5d&interval=1d"
+        "&fast_sma=5&slow_sma=15&rsi=10"
+        "&tp=0.02&sl=-0.02&cost=0.0002&leverage=2"
+    )
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    p = data["parameters_used"]
+    assert p["fast_sma"] == 5
+    assert p["slow_sma"] == 15
+    assert p["rsi"] == 10
+    assert pytest.approx(p["tp"]) == 0.02
+    assert pytest.approx(p["sl"]) == -0.02
+    assert pytest.approx(p["cost"]) == 0.0002
+    assert p["leverage"] == 2
+
+
+def test_backtest_validation_slow_sma_not_greater_than_fast_sma():
+    """slow_sma <= fast_sma must return 422."""
+    client = TestClient(app)
+    response = client.get(
+        "/api/backtest/rsi_sma?fast_sma=20&slow_sma=10"
+    )
+    assert response.status_code == 422
+
+
+def test_backtest_validation_slow_sma_equal_fast_sma():
+    """slow_sma == fast_sma must return 422."""
+    client = TestClient(app)
+    response = client.get(
+        "/api/backtest/rsi_sma?fast_sma=10&slow_sma=10"
+    )
+    assert response.status_code == 422
+
+
+def test_backtest_validation_sl_must_be_negative():
+    """sl >= 0 must return 422."""
+    client = TestClient(app)
+    response = client.get("/api/backtest/rsi_sma?sl=0.01")
+    assert response.status_code == 422
+
+
+def test_backtest_validation_sl_zero_rejected():
+    """sl == 0 must return 422."""
+    client = TestClient(app)
+    response = client.get("/api/backtest/rsi_sma?sl=0.0")
+    assert response.status_code == 422
+
+
+def test_backtest_validation_tp_must_be_positive():
+    """tp <= 0 must return 422."""
+    client = TestClient(app)
+    response = client.get("/api/backtest/rsi_sma?tp=-0.01")
+    assert response.status_code == 422
+
+
+def test_backtest_validation_leverage_must_be_positive():
+    """leverage <= 0 must return 422."""
+    client = TestClient(app)
+    response = client.get("/api/backtest/rsi_sma?leverage=0")
+    assert response.status_code == 422
+
+
+def test_backtest_cci_unaffected_by_params():
+    """CCI stub returns 200 regardless of param overrides."""
+    client = TestClient(app)
+    response = client.get("/api/backtest/cci?fast_sma=5&slow_sma=15")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["strategy_id"] == "cci"
+    assert data["metrics"] is None
+
+
+def test_backtest_rsi_sma_regime_accepts_params():
+    """rsi_sma_regime also accepts param overrides."""
+    client = TestClient(app)
+    url = (
+        "/api/backtest/rsi_sma_regime"
+        "?symbol=AAPL&period=5d&interval=1d&fast_sma=5&slow_sma=15"
+    )
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["parameters_used"]["fast_sma"] == 5
+    assert data["parameters_used"]["slow_sma"] == 15

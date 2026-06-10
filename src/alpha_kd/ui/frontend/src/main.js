@@ -212,6 +212,48 @@ const backtestChartContainer = document.getElementById("backtest-chart-container
 const backtestTradesContainer = document.getElementById("backtest-trades-container");
 const backtestRegimeContainer = document.getElementById("backtest-regime-container");
 const regimeDistributionBar = document.getElementById("regime-distribution-bar");
+
+// Parameter override panel elements
+const paramOverridesPanel = document.getElementById("param-overrides-panel");
+const resetParamsBtn = document.getElementById("reset-params-btn");
+const paramInputs = {
+    fast_sma: document.getElementById("param-fast-sma"),
+    slow_sma: document.getElementById("param-slow-sma"),
+    rsi: document.getElementById("param-rsi"),
+    tp: document.getElementById("param-tp"),
+    sl: document.getElementById("param-sl"),
+    cost: document.getElementById("param-cost"),
+    leverage: document.getElementById("param-leverage"),
+};
+
+const DEFAULT_PARAMS = {
+    fast_sma: 10, slow_sma: 20, rsi: 14,
+    tp: 0.01, sl: -0.01, cost: 0.0001, leverage: 1,
+};
+
+function fillParamInputsFromDefaults(defaults) {
+    Object.entries(paramInputs).forEach(([key, el]) => {
+        el.value = defaults[key] ?? "";
+    });
+}
+
+function buildParamQueryString() {
+    const parts = [];
+    Object.entries(paramInputs).forEach(([key, el]) => {
+        const val = el.value.trim();
+        if (val !== "") {
+            const def = DEFAULT_PARAMS[key];
+            if (String(Number(val)) !== String(def)) {
+                parts.push(`${key}=${encodeURIComponent(val)}`);
+            }
+        }
+    });
+    return parts.length ? "&" + parts.join("&") : "";
+}
+
+resetParamsBtn.addEventListener("click", () => {
+    fillParamInputsFromDefaults(DEFAULT_PARAMS);
+});
 const btObservationsContainer = document.getElementById("bt-observations-container");
 
 // Metadata labels
@@ -334,6 +376,7 @@ strategySelector.addEventListener("change", (e) => {
     if (!selectedStrategyId) {
         strategyInfo.textContent = "Select a strategy to view configuration details.";
         runBacktestBtn.disabled = true;
+        paramOverridesPanel.style.display = "none";
         hideStatusMessage();
         return;
     }
@@ -366,9 +409,12 @@ strategySelector.addEventListener("change", (e) => {
 
     if (isStub) {
         runBacktestBtn.disabled = true;
+        paramOverridesPanel.style.display = "none";
         showStatusMessage("error", `Backtest unavailable: ${strat.strategy_name} belongs to the zero-alloc streaming path and is currently stub/incomplete.`);
     } else {
         runBacktestBtn.disabled = false;
+        paramOverridesPanel.style.display = "block";
+        fillParamInputsFromDefaults(strat.parameters || DEFAULT_PARAMS);
         hideStatusMessage();
     }
 });
@@ -501,8 +547,9 @@ runBacktestBtn.addEventListener("click", async () => {
         let result = null;
         let compareResult = null;
 
-        // Fetch primary backtest
-        const response = await fetch(`/api/backtest/${selectedStrategyId}`);
+        // Fetch primary backtest (append non-default param overrides)
+        const paramQs = buildParamQueryString();
+        const response = await fetch(`/api/backtest/${selectedStrategyId}${paramQs ? "?" + paramQs.slice(1) : ""}`);
         if (!response.ok) {
             let errorMsg = `Server error: ${response.status}`;
             try {
@@ -845,6 +892,20 @@ function renderObservationsAndMetadata(result, compareResult) {
                 <strong>Export Timestamp:</strong>
                 <span>${timestamp}</span>
             </div>
+            ${result.parameters_used ? `
+            <div class="metadata-row" style="grid-column: 1 / -1;">
+                <strong>Parameters Used:</strong>
+                <div class="parameter-grid" style="margin-top: 0.25rem;">
+                    ${Object.entries(result.parameters_used).map(([k, v]) => `
+                        <div class="parameter-badge">
+                            <span class="parameter-badge-name">${k}</span>
+                            <span class="parameter-badge-val">${v}</span>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+            ${isComparison ? `<div class="metadata-row" style="grid-column: 1 / -1; font-size: 0.75rem; color: var(--text-muted, #aaa);">Comparison strategy runs with default parameters.</div>` : ""}
+            ` : ""}
         </div>
     `;
 

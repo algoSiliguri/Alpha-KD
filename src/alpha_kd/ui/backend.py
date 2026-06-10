@@ -5,6 +5,7 @@ import json
 import multiprocessing.shared_memory as shm
 import tempfile
 from pathlib import Path
+from typing import Optional
 from fastapi import FastAPI, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from alpha_kd.telemetry.structures import TelemetryHeader, DoubleBufferedSnapshot
@@ -113,12 +114,62 @@ def get_strategies():
     }
 
 
+def _build_and_validate_params(
+    fast_sma: Optional[int],
+    slow_sma: Optional[int],
+    rsi: Optional[int],
+    tp: Optional[float],
+    sl: Optional[float],
+    cost: Optional[float],
+    leverage: Optional[float],
+) -> dict:
+    params = {**DEFAULT_PARAMS}
+    overrides = {
+        "fast_sma": fast_sma,
+        "slow_sma": slow_sma,
+        "rsi": rsi,
+        "tp": tp,
+        "sl": sl,
+        "cost": cost,
+        "leverage": leverage,
+    }
+    for k, v in overrides.items():
+        if v is not None:
+            params[k] = v
+
+    if params["fast_sma"] < 2:
+        raise HTTPException(status_code=422, detail="fast_sma: must be >= 2")
+    if params["slow_sma"] < 2:
+        raise HTTPException(status_code=422, detail="slow_sma: must be >= 2")
+    if params["slow_sma"] <= params["fast_sma"]:
+        raise HTTPException(status_code=422, detail="slow_sma: must be > fast_sma")
+    if params["rsi"] < 2:
+        raise HTTPException(status_code=422, detail="rsi: must be >= 2")
+    if params["tp"] <= 0:
+        raise HTTPException(status_code=422, detail="tp: must be > 0")
+    if params["sl"] >= 0:
+        raise HTTPException(status_code=422, detail="sl: must be < 0")
+    if params["cost"] < 0:
+        raise HTTPException(status_code=422, detail="cost: must be >= 0")
+    if params["leverage"] <= 0:
+        raise HTTPException(status_code=422, detail="leverage: must be > 0")
+
+    return params
+
+
 @app.get("/api/backtest/{strategy_id}")
 def run_backtest(
     strategy_id: str,
     symbol: str = "AAPL",
     period: str = "5d",
     interval: str = "1h",
+    fast_sma: Optional[int] = None,
+    slow_sma: Optional[int] = None,
+    rsi: Optional[int] = None,
+    tp: Optional[float] = None,
+    sl: Optional[float] = None,
+    cost: Optional[float] = None,
+    leverage: Optional[float] = None,
 ):
     if strategy_id == "cci":
         return {
@@ -142,6 +193,8 @@ def run_backtest(
             detail=f"Strategy '{strategy_id}' not found"
         )
 
+    params = _build_and_validate_params(fast_sma, slow_sma, rsi, tp, sl, cost, leverage)
+
     try:
         fetcher = YahooFinanceFetcher()
         df = fetcher.fetch(symbol, period=period, interval=interval)
@@ -156,7 +209,7 @@ def run_backtest(
     with tempfile.TemporaryDirectory() as tmpdir:
         tel_path = Path(tmpdir) / "telemetry.jsonl"
         bt = BacktestTelemetry(
-            df, strat_class, DEFAULT_PARAMS, telemetry_path=tel_path
+            df, strat_class, params, telemetry_path=tel_path
         )
         bt.run()
 
@@ -190,6 +243,7 @@ def run_backtest(
         "symbol": symbol,
         "period": period,
         "interval": interval,
+        "parameters_used": params,
         "bars_processed": len(records),
         "equity_curve": equity_curve,
         "cumulative_returns": cum_returns,
