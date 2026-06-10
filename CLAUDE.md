@@ -1,29 +1,38 @@
 # Alpha-KD — Quant Trading System
 
 ## Vision
-Robust, backtest-validated trading system. Rebuild target: decoupled domains,
-package structure, externalized config, single strategy interface, secrets out of source.
+Research-first quant product: backtest, inspect, decide. Not a signal provider,
+not an autotrading service. Decoupled domains, single strategy interface,
+externalized config, secrets out of source.
 
 ## Hard Rules (override defaults)
 - NO wildcard imports (`from X import *`). Import named symbols only.
 - NO secrets in source. Credentials → env vars / gitignored `.env`. Never commit keys.
 - NO new module names that shadow pip packages.
-- After code edits, run `/understand --auto-update` if graph exists.
+- NO broad refactors without explicit approval.
+- Always inspect existing code before editing. Always show a plan before a patch.
+- Update the relevant GitHub issue/PR status when task state changes.
+- Repo map: `.understand-anything/knowledge-graph.json` (Understand-Anything).
+  Prefer it over grep sweeps for structure questions. Refresh after code edits
+  if the tooling is available; otherwise note staleness.
 
 ## Domain Map
 INGESTION  src/alpha_kd/data_fetcher.py, Data/
 SIGNAL     src/alpha_kd/strategies/
 EXECUTION  src/alpha_kd/execution/
 TELEMETRY  src/alpha_kd/telemetry/, src/alpha_kd/backtest_telemetry.py
-UI         src/alpha_kd/ui/
+UI         src/alpha_kd/ui/ (FastAPI backend + Vite/uPlot frontend)
 
-## Known Debt (rebuild backlog)
-1 wildcard imports  2 no package metadata  3 dual broker stacks  4 module/pkg name shadow
-5 strategy copy-paste (LI_2023_02_* x7)  6 plaintext credentials
+## Debt Status
+Original rebuild backlog (wildcard imports, missing package metadata, dual broker
+stacks, module/pip name shadow, LI_2023 strategy copy-paste, plaintext credentials)
+is RESOLVED — legacy directories removed in commit 16b78b1. Watch for regressions;
+do not reintroduce.
 
 ## Tooling
 - File ops: `rtk read|grep|find|ls`. Heavy sweeps → Explore sub-agent (isolated context).
-- Env: uv, pyproject.toml (uv.lock). Python 3.10, FastAPI, onnxruntime, uPlot.
+- Env: uv, pyproject.toml (uv.lock). Python version follows `pyproject.toml`
+  (currently >=3.11). FastAPI, onnxruntime, uPlot.
 
 ## Execution Contract (Agent Protocol)
 
@@ -85,8 +94,8 @@ Before pushing any commit, run the checks below locally and paste the results in
 ## Self-Certification
 
 - [ ] `pytest -q` passes locally
-- [ ] `ruff check alpha_kd/ tests/ --select E,W,F` passes (zero errors)
-- [ ] Zero lines >88 characters in `alpha_kd/` and `tests/`
+- [ ] `ruff check src/ tests/ --select E,W,F` passes (zero errors)
+- [ ] Zero lines >88 characters in `src/alpha_kd/` and `tests/`
 - [ ] Zero `import *` in new/modified files
 - [ ] Zero hardcoded secrets
 - [ ] No new monolithic files (>150 lines without ADR justification)
@@ -124,3 +133,18 @@ find src/alpha_kd/ tests/ -name "*.py" -exec wc -l {} + | awk '$1 > 150 {print "
 @.claude/rules/python-style.md
 @.claude/rules/security.md
 @.claude/rules/data-contracts.md
+
+## Local Knowledge Workflow
+
+For complex design, debugging, or planning work, use the local knowledge workflow:
+
+1. Read `wiki/` first — it contains stable, promoted knowledge for this repo.
+2. Run `/grill-me` (project skill) to interview one question at a time;
+   source playbook: `prompts/grill-me-checkpoint.md`.
+3. Save temporary extraction notes in `brainstorms/` (gitignored, local-only).
+4. Do not treat `brainstorms/` as durable truth.
+5. Promote only stable, approved knowledge into `wiki/` (committed).
+6. Run `/promote-to-wiki` (project skill) — requires explicit human approval;
+   source playbook: `prompts/promote-to-wiki.md`.
+7. Use `artifacts/` only for optional visual summaries (gitignored, local-only).
+8. Do not install or use global skills unless explicitly approved.
