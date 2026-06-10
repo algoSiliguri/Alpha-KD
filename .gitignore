@@ -162,3 +162,9 @@ src/alpha_kd/ui/frontend/dist/
 
 # Understand-Anything intermediate files
 .understand-anything/intermediate/
+
+# Local knowledge workflow: scratch stays local, structure stays versioned
+brainstorms/*
+!brainstorms/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
